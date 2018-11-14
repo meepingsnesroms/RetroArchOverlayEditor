@@ -27,11 +27,13 @@ CONFIG += c++11
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
-    overlayeditor.cpp
+    overlayeditor.cpp \
+    overlaydisplay.cpp
 
 HEADERS += \
         mainwindow.h \
-    overlayeditor.h
+    overlayeditor.h \
+    overlaydisplay.h
 
 FORMS += \
         mainwindow.ui

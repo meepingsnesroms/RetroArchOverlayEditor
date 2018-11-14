@@ -7,11 +7,14 @@
 #include <QPainter>
 
 typedef struct{
-   float x;
-   float y;
-   float w;
-   float h;
-   QImage image;
+   double x;
+   double y;
+   double w;
+   double h;
+   int l;//layer
+   int i;//index
+   QString b;//button
+   QPixmap p;//pixmap
 }overlay_object;
 
 class OverlayEditor{
@@ -21,16 +24,17 @@ private:
    QPixmap* background;
    QPainter* renderer;
    QPixmap* framebuffer;
-   float mouseDownX;
-   float mouseDownY;
-   float mouseLastX;
-   float mouseLastY;
+   int currentLayer;
+   double mouseDownX;
+   double mouseDownY;
+   double mouseLastX;
+   double mouseLastY;
 
-   bool hitboxDot(float x1, float y1, float w1, float h1, float x2, float y2);
-   bool hitboxSquare(float x1, float y1, float w1, float h1, float x2, float y2, float w2, float h2);
-   bool touchingSelectedObject(float x, float y);
-   void updateSelectedObjects(float x, float y, float w, float h);
-   void moveSelectedObjects(float x, float y);//in deltas, not absolute
+   bool hitboxDot(double x1, double y1, double w1, double h1, double x2, double y2);
+   bool hitboxSquare(double x1, double y1, double w1, double h1, double x2, double y2, double w2, double h2);
+   bool touchingSelectedObject(double x, double y);
+   void updateSelectedObjects(double x, double y, double w, double h);
+   void moveSelectedObjects(double x, double y);//in deltas, not absolute
    void render();
 
 public:
@@ -38,12 +42,18 @@ public:
    ~OverlayEditor();
 
    QString getOverlayText();
-   void setOverlayText(QString);
+   void setOverlayText(const QString& data);
+   void setCanvasSize(int w, int h);
+   void setLayer(int layer);
+   const QPixmap& getImage(){return *framebuffer;}
 
-   void mouseDown(float x, float y);
-   void mouseMove(float x, float y);
+   void mouseDown(double x, double y);
+   void mouseMove(double x, double y);
    void mouseUp();
 
+   void add(const QString& buttonName, const QPixmap& buttonImage);
+   void remove();
+   void resize(double w, double h);//in deltas, not absolute
 };
 
 #endif
