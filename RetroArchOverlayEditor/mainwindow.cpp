@@ -9,7 +9,7 @@ MainWindow::MainWindow(QWidget* parent) :
    ui(new Ui::MainWindow){
    ui->setupUi(this);
 
-   editor = new OverlayEditor(ui->framebuffer->width(), ui->framebuffer->height());
+   editor = new OverlayEditor(320, 240);
    refreshDisplay = new QTimer(this);
 
    connect(refreshDisplay, SIGNAL(timeout()), this, SLOT(updateDisplay()));

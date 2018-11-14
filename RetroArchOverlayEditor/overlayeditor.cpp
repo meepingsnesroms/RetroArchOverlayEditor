@@ -11,6 +11,7 @@ OverlayEditor::OverlayEditor(int w, int h){
    renderer = new QPainter(framebuffer);
    objects.clear();
    selectedObjects.clear();
+   mouseActive = false;
    mouseDownX = -1.0;
    mouseDownY = -1.0;
    mouseLastX = -1.0;
@@ -18,6 +19,8 @@ OverlayEditor::OverlayEditor(int w, int h){
    currentLayer = 0;
    renderer->setBrush(QColor("Black"));
    renderer->drawRect(QRect(0, 0, framebuffer->width(), framebuffer->height()));
+
+   render();
 }
 
 OverlayEditor::~OverlayEditor(){
@@ -60,25 +63,37 @@ void OverlayEditor::moveSelectedObjects(double x, double y){
 }
 
 void OverlayEditor::render(){
+   renderer->setOpacity(1.0);
+
    //clear
    if(background){
-      //renderer->drawPixmap(0, 0, );
+      renderer->drawPixmap(QRect(0, 0, framebuffer->width(), framebuffer->height()), *background, QRectF(0.0, 0.0, 1.0, 1.0));
    }
    else{
-      renderer->setBrush(QColor("Black"));
+      renderer->setBrush(QColor("Green"));
       renderer->drawRect(QRect(0, 0, framebuffer->width(), framebuffer->height()));
    }
 
    //draw all objects
    for(int index = 0; index < objects.size(); index++){
-      //renderer->drawPixmap();
+      if(objects[index].l == currentLayer)
+         renderer->drawPixmap(QRectF(0.0, 0.0, framebuffer->width(), framebuffer->height()), objects[index].p, QRectF(0.0, 0.0, 1.0, 1.0));
    }
 
    if(selectedObjects.empty()){
       //still selecting, draw white transparent square around selection area
+      if(mouseActive){
+         renderer->setOpacity(0.5);
+         renderer->setBrush(QColor("White"));
+         renderer->drawRect(QRectF(qMin(mouseDownX, mouseLastX) * framebuffer->width(), qMin(mouseDownY, mouseLastY) * framebuffer->height(), qAbs(mouseLastX - mouseDownX) * framebuffer->width(), qAbs(mouseLastY - mouseDownY) * framebuffer->height()));
+      }
    }
    else{
       //draw green transparent squares around selected objects
+      renderer->setOpacity(0.5);
+      renderer->setBrush(QColor("Transparent Green"));
+      for(int index = 0; index < selectedObjects.size(); index++)
+         renderer->drawRect(QRectF(selectedObjects[index]->x, selectedObjects[index]->y, selectedObjects[index]->w, selectedObjects[index]->h));
    }
 }
 
@@ -105,6 +120,7 @@ void OverlayEditor::mouseDown(double x, double y){
    if(!touchingSelectedObject(x, y))
       selectedObjects.clear();
 
+   mouseActive = true;
    mouseDownX = x;
    mouseDownY = y;
    mouseLastX = x;
@@ -112,16 +128,17 @@ void OverlayEditor::mouseDown(double x, double y){
 }
 
 void OverlayEditor::mouseMove(double x, double y){
-   if(!selectedObjects.empty()){
-      moveSelectedObjects(mouseLastX - mouseDownX, mouseLastY - mouseDownY);
-      render();
-   }
-
    mouseLastX = x;
    mouseLastY = y;
+
+   if(!selectedObjects.empty())
+      moveSelectedObjects(mouseLastX - mouseDownX, mouseLastY - mouseDownY);
+   render();
 }
 
 void OverlayEditor::mouseUp(){
+   mouseActive = false;
+
    if(selectedObjects.empty())
       updateSelectedObjects(qMin(mouseDownX, mouseLastX), qMin(mouseDownY, mouseLastY), qAbs(mouseLastX - mouseDownX), qAbs(mouseLastY - mouseDownY));
    render();

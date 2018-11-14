@@ -17,6 +17,7 @@ typedef struct{
    QPixmap p;//pixmap
 }overlay_object;
 
+
 class OverlayEditor{
 private:
    QVector<overlay_object> objects;
@@ -25,6 +26,7 @@ private:
    QPainter* renderer;
    QPixmap* framebuffer;
    int currentLayer;
+   bool mouseActive;
    double mouseDownX;
    double mouseDownY;
    double mouseLastX;
