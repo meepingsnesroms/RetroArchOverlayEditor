@@ -37,7 +37,8 @@ bool OverlayEditor::hitboxDot(double x1, double y1, double w1, double h1, double
 }
 
 bool OverlayEditor::hitboxSquare(double x1, double y1, double w1, double h1, double x2, double y2, double w2, double h2){
-   //check if any of the edge of the other object is in the box of the second
+   if(x1 <= x2 + w2 && x1 + w1 >= x2 && y1 <= y2 + h2 && y1 + h1 >= y2)
+      return true;
    return false;
 }
 
@@ -161,6 +162,7 @@ void OverlayEditor::mouseMove(double x, double y){
 
    if(!selectedObjects.empty())
       moveSelectedObjects(mouseLastX - mouseDownX, mouseLastY - mouseDownY);
+
    render();
 }
 
@@ -169,6 +171,7 @@ void OverlayEditor::mouseUp(){
 
    if(selectedObjects.empty())
       updateSelectedObjects(qMin(mouseDownX, mouseLastX), qMin(mouseDownY, mouseLastY), qAbs(mouseLastX - mouseDownX), qAbs(mouseLastY - mouseDownY));
+
    render();
 }
 

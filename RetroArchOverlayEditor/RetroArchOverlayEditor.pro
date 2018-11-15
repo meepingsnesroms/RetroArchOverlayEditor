@@ -28,15 +28,18 @@ SOURCES += \
         main.cpp \
         mainwindow.cpp \
     overlayeditor.cpp \
-    overlaydisplay.cpp
+    overlaydisplay.cpp \
+    overlayfunctions.cpp
 
 HEADERS += \
         mainwindow.h \
     overlayeditor.h \
-    overlaydisplay.h
+    overlaydisplay.h \
+    overlayfunctions.h
 
 FORMS += \
-        mainwindow.ui
+        mainwindow.ui \
+    overlayfunctions.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
