@@ -17,6 +17,7 @@ OverlayEditor::OverlayEditor(int w, int h){
    mouseLastX = -1.0;
    mouseLastY = -1.0;
    currentLayer = 0;
+   totalLayers = 1;
    renderer->setBrush(QColor("Black"));
    renderer->drawRect(QRect(0, 0, framebuffer->width(), framebuffer->height()));
 
@@ -28,7 +29,6 @@ OverlayEditor::~OverlayEditor(){
    delete background;
    delete framebuffer;
 }
-
 
 bool OverlayEditor::hitboxDot(double x1, double y1, double w1, double h1, double x2, double y2){
    if(x2 >= x1 && x2 <= x1 + w1 && y2 >= y1 && y2 <= y1 + h1)
@@ -49,6 +49,12 @@ bool OverlayEditor::touchingSelectedObject(double x, double y){
    return false;
 }
 
+overlay_object* OverlayEditor::getObject(int l, int i){
+   for(int index = 0; index < objects.size(); index++)
+      if(objects[index].l == l && objects[index].i == i)
+         return &objects[index];
+   return nullptr;
+}
 
 void OverlayEditor::updateSelectedObjects(double x, double y, double w, double h){
    selectedObjects.clear();
@@ -77,28 +83,50 @@ void OverlayEditor::render(){
    //draw all objects
    for(int index = 0; index < objects.size(); index++){
       if(objects[index].l == currentLayer)
-         renderer->drawPixmap(QRectF(0.0, 0.0, framebuffer->width(), framebuffer->height()), objects[index].p, QRectF(0.0, 0.0, 1.0, 1.0));
+         renderer->drawPixmap(QRect(objects[index].x * framebuffer->width(), objects[index].y * framebuffer->height(), objects[index].w * framebuffer->width(), objects[index].h * framebuffer->height()), objects[index].p, QRect(0, 0, objects[index].p.width(), objects[index].p.height()));
    }
 
+   renderer->setOpacity(0.5);
    if(selectedObjects.empty()){
       //still selecting, draw white transparent square around selection area
       if(mouseActive){
-         renderer->setOpacity(0.5);
          renderer->setBrush(QColor("White"));
-         renderer->drawRect(QRectF(qMin(mouseDownX, mouseLastX) * framebuffer->width(), qMin(mouseDownY, mouseLastY) * framebuffer->height(), qAbs(mouseLastX - mouseDownX) * framebuffer->width(), qAbs(mouseLastY - mouseDownY) * framebuffer->height()));
+         renderer->drawRect(QRect(qMin(mouseDownX, mouseLastX) * framebuffer->width(), qMin(mouseDownY, mouseLastY) * framebuffer->height(), qAbs(mouseLastX - mouseDownX) * framebuffer->width(), qAbs(mouseLastY - mouseDownY) * framebuffer->height()));
       }
    }
    else{
       //draw green transparent squares around selected objects
-      renderer->setOpacity(0.5);
-      renderer->setBrush(QColor("Transparent Green"));
+      renderer->setBrush(QColor("Green"));
       for(int index = 0; index < selectedObjects.size(); index++)
-         renderer->drawRect(QRectF(selectedObjects[index]->x, selectedObjects[index]->y, selectedObjects[index]->w, selectedObjects[index]->h));
+         renderer->drawRect(QRect(selectedObjects[index]->x * framebuffer->width(), selectedObjects[index]->y * framebuffer->height(), selectedObjects[index]->w * framebuffer->width(), selectedObjects[index]->h * framebuffer->height()));
    }
 }
 
-QString OverlayEditor::getOverlayText(){
+QString OverlayEditor::stringifyObject(const overlay_object& object){
+   QString str = "overlay" + QString::number(object.l) + "_desc" + QString::number(object.i) + " = \"" + object.b + "," + QString::number(object.x) + "," + QString::number(object.y) + "," + (object.r ? "radial" : "rect") + "," + QString::number(object.w) + "," + QString::number(object.h) + "\"\n";
+   str += "overlay" + QString::number(object.l) + "_desc" + QString::number(object.i) + "_overlay = " + object.in + "\n";
+   return str;
+}
 
+QString OverlayEditor::getOverlayText(){
+   QString output = "overlays = " + QString::number(totalLayers) + "\n";
+
+   output += "\n";
+
+   //build all layer info
+   for(int index = 0; index < totalLayers; index++){
+      output += "overlay" + QString::number(index) + "_full_screen = true\n";
+      output += "overlay" + QString::number(index) + "_normalized = true\n";
+      output += "overlay" + QString::number(index) + "_name = ovrly" + QString::number(index) + "\n";
+      output += "overlay" + QString::number(index) + "_range_mod = 1.5\n";
+      output += "overlay" + QString::number(index) + "_alpha_mod = 2.0\n";
+   }
+
+   output += "\n";
+
+   //add all object info
+   for(int index = 0; index < objects.size(); index++)
+      output += stringifyObject(objects[index]);
 }
 
 void OverlayEditor::setOverlayText(const QString& data){
