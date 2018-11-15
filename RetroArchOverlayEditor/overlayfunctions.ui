@@ -24,7 +24,7 @@
    <item>
     <widget class="QPushButton" name="deleteButton">
      <property name="text">
-      <string>Delete Button</string>
+      <string>Delete Button(s)</string>
      </property>
     </widget>
    </item>
@@ -47,22 +47,29 @@
     </layout>
    </item>
    <item>
-    <widget class="QLineEdit" name="newButtonImagePath">
+    <widget class="QPushButton" name="setBackground">
      <property name="text">
-      <string/>
-     </property>
-     <property name="placeholderText">
-      <string>New Button Image Path</string>
+      <string>Set Background</string>
      </property>
     </widget>
    </item>
    <item>
-    <widget class="QLineEdit" name="newButtonName">
+    <widget class="QLineEdit" name="imagePath">
      <property name="text">
       <string/>
      </property>
      <property name="placeholderText">
-      <string>New Button Name</string>
+      <string>Image Path</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLineEdit" name="buttonName">
+     <property name="text">
+      <string/>
+     </property>
+     <property name="placeholderText">
+      <string>Button Name</string>
      </property>
     </widget>
    </item>

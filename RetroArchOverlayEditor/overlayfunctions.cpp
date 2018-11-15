@@ -21,10 +21,13 @@ OverlayFunctions::~OverlayFunctions(){
 }
 
 void OverlayFunctions::on_addButton_clicked(){
-   if(!ui->newButtonName->text().isEmpty() && !ui->newButtonImagePath->text().isEmpty() && QFile(ui->newButtonImagePath->text()).exists()){
-      ((MainWindow*)parentWidget())->editor->add(ui->newButtonName->text(), QPixmap(ui->newButtonImagePath->text()));
+   ((MainWindow*)parentWidget())->editor->add(ui->buttonName->text(), ui->imagePath->text());
+}
 
-      ui->newButtonName->clear();
-      ui->newButtonImagePath->clear();
-   }
+void OverlayFunctions::on_deleteButton_clicked(){
+   ((MainWindow*)parentWidget())->editor->remove();
+}
+
+void OverlayFunctions::on_setBackground_clicked(){
+   ((MainWindow*)parentWidget())->editor->setBackground(ui->imagePath->text());
 }

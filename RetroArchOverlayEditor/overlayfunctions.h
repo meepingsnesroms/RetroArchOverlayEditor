@@ -16,6 +16,8 @@ public:
 
 private slots:
    void on_addButton_clicked();
+   void on_deleteButton_clicked();
+   void on_setBackground_clicked();
 
 private:
    Ui::OverlayFunctions* ui;

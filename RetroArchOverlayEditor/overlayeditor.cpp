@@ -3,10 +3,11 @@
 #include <QtGlobal>
 #include <QString>
 #include <QPixmap>
+#include <QFile>
+#include <QFileInfo>
 
 
 OverlayEditor::OverlayEditor(int w, int h){
-   background = nullptr;
    framebuffer = new QPixmap(w, h);
    renderer = new QPainter(framebuffer);
    objects.clear();
@@ -26,7 +27,6 @@ OverlayEditor::OverlayEditor(int w, int h){
 
 OverlayEditor::~OverlayEditor(){
    delete renderer;
-   delete background;
    delete framebuffer;
 }
 
@@ -87,8 +87,8 @@ void OverlayEditor::render(){
    renderer->setOpacity(1.0);
 
    //clear
-   if(background){
-      renderer->drawPixmap(QRect(0, 0, framebuffer->width(), framebuffer->height()), *background, QRectF(0.0, 0.0, 1.0, 1.0));
+   if(!background.isNull()){
+      renderer->drawPixmap(QRect(0, 0, framebuffer->width(), framebuffer->height()), background, QRect(0.0, 0.0, background.width(), background.height()));
    }
    else{
       renderer->setBrush(QColor("Black"));
@@ -159,6 +159,22 @@ void OverlayEditor::setLayer(int layer){
    currentLayer = layer;
 }
 
+void OverlayEditor::setBackground(const QString& imagePath){
+   if(imagePath.isEmpty()){
+      //remove background
+      background = QPixmap();
+   }
+   else{
+      //set background
+      QPixmap backgroundImage(imagePath);
+
+      if(!backgroundImage.isNull())
+         background = backgroundImage;
+   }
+
+   render();
+}
+
 void OverlayEditor::mouseDown(double x, double y){
    if(!touchedSelectedObject(x, y))
       selectedObjects.clear();
@@ -191,20 +207,25 @@ void OverlayEditor::mouseUp(){
 }
 
 
-void OverlayEditor::add(const QString& buttonName, const QPixmap& buttonImage){
-   overlay_object newObject;
+void OverlayEditor::add(const QString& buttonName, const QString& imagePath){
+   QPixmap buttonImage(imagePath);
 
-   newObject.x = 0.5 - 0.05;
-   newObject.x = 0.5 - 0.05;
-   newObject.w = 0.1;
-   newObject.h = 0.1;
-   newObject.l = currentLayer;
-   newObject.b = buttonName;
-   newObject.p = buttonImage;
+   if(!buttonName.isEmpty() && !buttonImage.isNull()){
+      overlay_object newObject;
 
-   objects += newObject;
+      newObject.x = 0.5 - 0.05;
+      newObject.y = 0.5 - 0.05;
+      newObject.w = 0.1;
+      newObject.h = 0.1;
+      newObject.l = currentLayer;
+      newObject.b = buttonName;
+      newObject.in = QFileInfo(imagePath).fileName();
+      newObject.p = buttonImage;
 
-   render();
+      objects += newObject;
+
+      render();
+   }
 }
 
 void OverlayEditor::remove(){

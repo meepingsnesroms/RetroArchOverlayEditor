@@ -24,7 +24,7 @@ class OverlayEditor{
 private:
    QVector<overlay_object> objects;
    QVector<overlay_object*> selectedObjects;
-   QPixmap* background;
+   QPixmap background;
    QPainter* renderer;
    QPixmap* framebuffer;
    int currentLayer;
@@ -52,6 +52,7 @@ public:
    QString getOverlayText();
    void setOverlayText(const QString& data);
    void setCanvasSize(int w, int h);
+   void setBackground(const QString& imagePath);
    void setLayer(int layer);
    const QPixmap& getImage(){return *framebuffer;}
 
@@ -59,7 +60,7 @@ public:
    void mouseMove(double x, double y);
    void mouseUp();
 
-   void add(const QString& buttonName, const QPixmap& buttonImage);
+   void add(const QString& buttonName, const QString& imagePath);
    void remove();
    void resize(double w, double h);//in deltas, not absolute
 };
