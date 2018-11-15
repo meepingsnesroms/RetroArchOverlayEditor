@@ -37,9 +37,9 @@ private:
 
    bool hitboxDot(double x1, double y1, double w1, double h1, double x2, double y2);
    bool hitboxSquare(double x1, double y1, double w1, double h1, double x2, double y2, double w2, double h2);
-   bool touchingSelectedObject(double x, double y);
+   bool touchedSelectedObject(double x, double y);
    overlay_object* getObject(int l, int i);
-   void updateSelectedObjects(double x, double y, double w, double h);
+   void updateSelectedObjects(double x, double y, double w, double h, bool area);
    void moveSelectedObjects(double x, double y);//in deltas, not absolute
    void render();
 

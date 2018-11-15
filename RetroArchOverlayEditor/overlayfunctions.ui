@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>300</height>
+    <height>450</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -27,6 +27,24 @@
       <string>Delete Button</string>
      </property>
     </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="buttonSizeContainer">
+     <item>
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>Button Size:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSlider" name="buttonSize">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
    <item>
     <widget class="QLineEdit" name="newButtonImagePath">

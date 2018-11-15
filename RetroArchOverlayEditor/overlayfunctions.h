@@ -14,8 +14,11 @@ public:
    explicit OverlayFunctions(QWidget* parent = nullptr);
    ~OverlayFunctions();
 
+private slots:
+   void on_addButton_clicked();
+
 private:
    Ui::OverlayFunctions* ui;
 };
 
-#endif // OVERLAYFUNCTIONS_H
+#endif

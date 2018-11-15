@@ -42,9 +42,9 @@ bool OverlayEditor::hitboxSquare(double x1, double y1, double w1, double h1, dou
    return false;
 }
 
-bool OverlayEditor::touchingSelectedObject(double x, double y){
-   for(int index = 0; index < objects.size(); index++){
-      if(objects[index].l == currentLayer && hitboxDot(objects[index].x, objects[index].y, objects[index].w, objects[index].h, x, y))
+bool OverlayEditor::touchedSelectedObject(double x, double y){
+   for(int index = 0; index < selectedObjects.size(); index++){
+      if(objects[index].l == currentLayer && hitboxDot(selectedObjects[index]->x, selectedObjects[index]->y, selectedObjects[index]->w, selectedObjects[index]->h, x, y))
          return true;
    }
    return false;
@@ -57,16 +57,30 @@ overlay_object* OverlayEditor::getObject(int l, int i){
    return nullptr;
 }
 
-void OverlayEditor::updateSelectedObjects(double x, double y, double w, double h){
+void OverlayEditor::updateSelectedObjects(double x, double y, double w, double h, bool area){
    selectedObjects.clear();
-   for(int index = 0; index < objects.size(); index++){
-      if(objects[index].l == currentLayer && hitboxSquare(x, y, w, h, objects[index].x, objects[index].y, objects[index].w, objects[index].h))
-         selectedObjects += &objects[index];
+   if(area){
+      for(int index = 0; index < objects.size(); index++){
+         if(objects[index].l == currentLayer && hitboxSquare(x, y, w, h, objects[index].x, objects[index].y, objects[index].w, objects[index].h))
+            selectedObjects += &objects[index];
+      }
+   }
+   else{
+      //single click, only select one object
+      for(int index = 0; index < objects.size(); index++){
+         if(objects[index].l == currentLayer && hitboxDot(objects[index].x, objects[index].y, objects[index].w, objects[index].h, x, y)){
+            selectedObjects += &objects[index];
+            break;
+         }
+      }
    }
 }
 
 void OverlayEditor::moveSelectedObjects(double x, double y){
-
+   for(int index = 0; index < selectedObjects.size(); index++){
+      selectedObjects[index]->x += x;
+      selectedObjects[index]->y += y;
+   }
 }
 
 void OverlayEditor::render(){
@@ -77,7 +91,7 @@ void OverlayEditor::render(){
       renderer->drawPixmap(QRect(0, 0, framebuffer->width(), framebuffer->height()), *background, QRectF(0.0, 0.0, 1.0, 1.0));
    }
    else{
-      renderer->setBrush(QColor("Green"));
+      renderer->setBrush(QColor("Black"));
       renderer->drawRect(QRect(0, 0, framebuffer->width(), framebuffer->height()));
    }
 
@@ -146,7 +160,7 @@ void OverlayEditor::setLayer(int layer){
 }
 
 void OverlayEditor::mouseDown(double x, double y){
-   if(!touchingSelectedObject(x, y))
+   if(!touchedSelectedObject(x, y))
       selectedObjects.clear();
 
    mouseActive = true;
@@ -157,11 +171,12 @@ void OverlayEditor::mouseDown(double x, double y){
 }
 
 void OverlayEditor::mouseMove(double x, double y){
+   //use difference between last x, y and current x, y
+   if(!selectedObjects.empty())
+      moveSelectedObjects(x - mouseLastX, y - mouseLastY);
+
    mouseLastX = x;
    mouseLastY = y;
-
-   if(!selectedObjects.empty())
-      moveSelectedObjects(mouseLastX - mouseDownX, mouseLastY - mouseDownY);
 
    render();
 }
@@ -170,7 +185,7 @@ void OverlayEditor::mouseUp(){
    mouseActive = false;
 
    if(selectedObjects.empty())
-      updateSelectedObjects(qMin(mouseDownX, mouseLastX), qMin(mouseDownY, mouseLastY), qAbs(mouseLastX - mouseDownX), qAbs(mouseLastY - mouseDownY));
+      updateSelectedObjects(qMin(mouseDownX, mouseLastX), qMin(mouseDownY, mouseLastY), qAbs(mouseLastX - mouseDownX), qAbs(mouseLastY - mouseDownY), !(mouseDownX == mouseLastX && mouseDownY == mouseLastY));
 
    render();
 }

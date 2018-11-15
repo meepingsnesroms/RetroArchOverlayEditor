@@ -5,6 +5,7 @@
 #include <QTimer>
 
 #include "overlayeditor.h"
+#include "overlayfunctions.h"
 
 namespace Ui {
 class MainWindow;
@@ -24,6 +25,7 @@ private slots:
 
 private:
    Ui::MainWindow* ui;
+   OverlayFunctions* tools;
    QTimer* refreshDisplay;
 };
 
