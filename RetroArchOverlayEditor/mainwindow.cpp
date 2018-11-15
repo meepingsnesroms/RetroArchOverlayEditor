@@ -22,7 +22,6 @@ MainWindow::MainWindow(QWidget* parent) :
 }
 
 MainWindow::~MainWindow(){
-   //refreshDisplay->stop();
    delete refreshDisplay;
    delete tools;
    delete editor;

@@ -10,17 +10,9 @@
 OverlayEditor::OverlayEditor(int w, int h){
    framebuffer = new QPixmap(w, h);
    renderer = new QPainter(framebuffer);
-   objects.clear();
-   selectedObjects.clear();
-   mouseActive = false;
-   mouseDownX = -1.0;
-   mouseDownY = -1.0;
-   mouseLastX = -1.0;
-   mouseLastY = -1.0;
-   currentLayer = 0;
-   totalLayers = 1;
    renderer->setBrush(QColor("Black"));
    renderer->drawRect(QRect(0, 0, framebuffer->width(), framebuffer->height()));
+   reset();
 
    render();
 }
@@ -112,8 +104,12 @@ void OverlayEditor::render(){
    else{
       //draw green transparent squares around selected objects
       renderer->setBrush(QColor("Green"));
-      for(int index = 0; index < selectedObjects.size(); index++)
-         renderer->drawRect(QRect(selectedObjects[index]->x * framebuffer->width(), selectedObjects[index]->y * framebuffer->height(), selectedObjects[index]->w * framebuffer->width(), selectedObjects[index]->h * framebuffer->height()));
+      for(int index = 0; index < selectedObjects.size(); index++){
+         if(selectedObjects[index]->r)
+            renderer->drawEllipse(QRect(selectedObjects[index]->x * framebuffer->width(), selectedObjects[index]->y * framebuffer->height(), selectedObjects[index]->w * framebuffer->width(), selectedObjects[index]->h * framebuffer->height()));
+         else
+            renderer->drawRect(QRect(selectedObjects[index]->x * framebuffer->width(), selectedObjects[index]->y * framebuffer->height(), selectedObjects[index]->w * framebuffer->width(), selectedObjects[index]->h * framebuffer->height()));
+      }
    }
 }
 
@@ -121,6 +117,19 @@ QString OverlayEditor::stringifyObject(const overlay_object& object){
    QString str = "overlay" + QString::number(object.l) + "_desc" + QString::number(object.i) + " = \"" + object.b + "," + QString::number(object.x) + "," + QString::number(object.y) + "," + (object.r ? "radial" : "rect") + "," + QString::number(object.w) + "," + QString::number(object.h) + "\"\n";
    str += "overlay" + QString::number(object.l) + "_desc" + QString::number(object.i) + "_overlay = " + object.in + "\n";
    return str;
+}
+
+void OverlayEditor::reset(){
+   objects.clear();
+   selectedObjects.clear();
+   background = QPixmap();
+   mouseActive = false;
+   mouseDownX = -1.0;
+   mouseDownY = -1.0;
+   mouseLastX = -1.0;
+   mouseLastY = -1.0;
+   currentLayer = 0;
+   totalLayers = 1;
 }
 
 QString OverlayEditor::getOverlayText(){
@@ -142,6 +151,8 @@ QString OverlayEditor::getOverlayText(){
    //add all object info
    for(int index = 0; index < objects.size(); index++)
       output += stringifyObject(objects[index]);
+
+   return output;
 }
 
 void OverlayEditor::setOverlayText(const QString& data){
@@ -253,6 +264,13 @@ void OverlayEditor::resize(double w, double h){
       selectedObjects[index]->w += w;
       selectedObjects[index]->h += h;
    }
+
+   render();
+}
+
+void OverlayEditor::setCollisionType(bool r){
+   for(int index = 0; index < selectedObjects.size(); index++)
+      selectedObjects[index]->r = r;
 
    render();
 }

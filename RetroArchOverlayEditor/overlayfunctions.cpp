@@ -14,6 +14,8 @@ OverlayFunctions::OverlayFunctions(QWidget* parent) :
 
    //this window is not closeable, minimizable or fullscreen capable
    setWindowFlags(Qt::Window | Qt::WindowTitleHint | Qt::CustomizeWindowHint);
+
+   ui->buttonSize->setValue(50);
 }
 
 OverlayFunctions::~OverlayFunctions(){
@@ -28,6 +30,26 @@ void OverlayFunctions::on_deleteButton_clicked(){
    ((MainWindow*)parentWidget())->editor->remove();
 }
 
+void OverlayFunctions::on_buttonSetRadial_clicked(){
+   ((MainWindow*)parentWidget())->editor->setCollisionType(true);
+}
+
+void OverlayFunctions::on_buttonSetRectangular_clicked(){
+   ((MainWindow*)parentWidget())->editor->setCollisionType(false);
+}
+
 void OverlayFunctions::on_setBackground_clicked(){
    ((MainWindow*)parentWidget())->editor->setBackground(ui->imagePath->text());
+}
+
+void OverlayFunctions::on_newOverlay_clicked(){
+   ((MainWindow*)parentWidget())->editor->reset();
+}
+
+void OverlayFunctions::on_saveOverlay_clicked(){
+
+}
+
+void OverlayFunctions::on_loadOverlay_clicked(){
+
 }

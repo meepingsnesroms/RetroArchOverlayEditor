@@ -17,7 +17,12 @@ public:
 private slots:
    void on_addButton_clicked();
    void on_deleteButton_clicked();
+   void on_buttonSetRadial_clicked();
+   void on_buttonSetRectangular_clicked();
    void on_setBackground_clicked();
+   void on_newOverlay_clicked();
+   void on_saveOverlay_clicked();
+   void on_loadOverlay_clicked();
 
 private:
    Ui::OverlayFunctions* ui;

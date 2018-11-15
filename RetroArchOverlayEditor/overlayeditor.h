@@ -22,11 +22,12 @@ typedef struct{
 
 class OverlayEditor{
 private:
+   QPainter* renderer;
+   QPixmap* framebuffer;
+
    QVector<overlay_object> objects;
    QVector<overlay_object*> selectedObjects;
    QPixmap background;
-   QPainter* renderer;
-   QPixmap* framebuffer;
    int currentLayer;
    int totalLayers;
    bool mouseActive;
@@ -49,6 +50,7 @@ public:
    OverlayEditor(int w, int h);
    ~OverlayEditor();
 
+   void reset();
    QString getOverlayText();
    void setOverlayText(const QString& data);
    void setCanvasSize(int w, int h);
@@ -63,6 +65,7 @@ public:
    void add(const QString& buttonName, const QString& imagePath);
    void remove();
    void resize(double w, double h);//in deltas, not absolute
+   void setCollisionType(bool r);
 };
 
 #endif
