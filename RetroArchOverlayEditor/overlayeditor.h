@@ -51,7 +51,8 @@ public:
    ~OverlayEditor();
 
    void reset();
-   QString getOverlayText();
+   void saveToFile(const QString& path);
+   void loadFromFile(const QString& path);
    void setOverlayText(const QString& data);
    void setCanvasSize(int w, int h);
    void setBackground(const QString& imagePath);

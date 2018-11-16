@@ -23,22 +23,54 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 CONFIG += c++11
+INCLUDEPATH += libretro-common/include
 
 SOURCES += \
-        main.cpp \
-        mainwindow.cpp \
-    overlayeditor.cpp \
+    main.cpp \
+    mainwindow.cpp \
     overlaydisplay.cpp \
-    overlayfunctions.cpp
+    overlayeditor.cpp \
+    overlayfunctions.cpp \
+    libretro-common/compat/compat_posix_string.c \
+    libretro-common/compat/compat_strcasestr.c \
+    libretro-common/compat/compat_strl.c \
+    libretro-common/compat/fopen_utf8.c \
+    libretro-common/encodings/encoding_utf.c \
+    libretro-common/file/config_file.c \
+    libretro-common/file/file_path.c \
+    libretro-common/lists/string_list.c \
+    libretro-common/memmap/memmap.c \
+    libretro-common/streams/file_stream.c \
+    libretro-common/vfs/vfs_implementation.c
 
 HEADERS += \
-        mainwindow.h \
-    overlayeditor.h \
+    libretro-common/include/compat/msvc/stdint.h \
+    libretro-common/include/compat/fopen_utf8.h \
+    libretro-common/include/compat/msvc.h \
+    libretro-common/include/compat/posix_string.h \
+    libretro-common/include/compat/strcasestr.h \
+    libretro-common/include/compat/strl.h \
+    libretro-common/include/encodings/utf.h \
+    libretro-common/include/file/config_file.h \
+    libretro-common/include/file/file_path.h \
+    libretro-common/include/lists/string_list.h \
+    libretro-common/include/streams/file_stream.h \
+    libretro-common/include/string/stdstring.h \
+    libretro-common/include/vfs/vfs_implementation.h \
+    libretro-common/include/boolean.h \
+    libretro-common/include/libretro.h \
+    libretro-common/include/memmap.h \
+    libretro-common/include/retro_assert.h \
+    libretro-common/include/retro_common_api.h \
+    libretro-common/include/retro_inline.h \
+    libretro-common/include/retro_miscellaneous.h \
+    mainwindow.h \
     overlaydisplay.h \
+    overlayeditor.h \
     overlayfunctions.h
 
 FORMS += \
-        mainwindow.ui \
+    mainwindow.ui \
     overlayfunctions.ui
 
 # Default rules for deployment.

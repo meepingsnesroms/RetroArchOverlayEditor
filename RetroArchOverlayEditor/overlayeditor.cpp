@@ -6,6 +6,8 @@
 #include <QFile>
 #include <QFileInfo>
 
+#include "libretro-common/include/file/config_file.h"
+
 
 OverlayEditor::OverlayEditor(int w, int h){
    framebuffer = new QPixmap(w, h);
@@ -132,7 +134,7 @@ void OverlayEditor::reset(){
    totalLayers = 1;
 }
 
-QString OverlayEditor::getOverlayText(){
+void OverlayEditor::saveToFile(const QString& path){
    QString output = "overlays = " + QString::number(totalLayers) + "\n";
 
    output += "\n";
@@ -151,12 +153,27 @@ QString OverlayEditor::getOverlayText(){
    //add all object info
    for(int index = 0; index < objects.size(); index++)
       output += stringifyObject(objects[index]);
-
-   return output;
 }
 
-void OverlayEditor::setOverlayText(const QString& data){
+void OverlayEditor::loadFromFile(const QString& path){
+   config_file_t* fileInput;
 
+   fileInput = config_file_new(path.toStdString().c_str());
+
+   //only continue if file existed
+   if(!fileInput)
+      return;
+
+   //start with default state
+   reset();
+
+   config_get_int(fileInput, "overlays", &totalLayers);
+
+   for(int index = 0; index < totalLayers; index++){
+
+   }
+
+   render();
 }
 
 void OverlayEditor::setCanvasSize(int w, int h){
