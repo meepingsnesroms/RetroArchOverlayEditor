@@ -44,13 +44,6 @@ bool OverlayEditor::touchedSelectedObject(double x, double y){
    return false;
 }
 
-overlay_object* OverlayEditor::getObject(int l, int i){
-   for(int index = 0; index < objects.size(); index++)
-      if(objects[index].l == l && objects[index].i == i)
-         return &objects[index];
-   return nullptr;
-}
-
 void OverlayEditor::updateSelectedObjects(double x, double y, double w, double h, bool area){
    selectedObjects.clear();
    if(area){
@@ -115,13 +108,9 @@ void OverlayEditor::render(){
    }
 }
 
-QString OverlayEditor::stringifyObject(const overlay_object& object){
-   QString str = "overlay" + QString::number(object.l) + "_desc" + QString::number(object.i) + " = \"" + object.b + "," + QString::number(object.x) + "," + QString::number(object.y) + "," + (object.r ? "radial" : "rect") + "," + QString::number(object.w) + "," + QString::number(object.h) + "\"\n";
-   str += "overlay" + QString::number(object.l) + "_desc" + QString::number(object.i) + "_overlay = " + object.in + "\n";
-   return str;
-}
-
 void OverlayEditor::reset(){
+   layers.clear();
+   layers += {false, false, 0.0, 0.0};//new layer 0 has no params
    objects.clear();
    selectedObjects.clear();
    background = QPixmap();
@@ -135,30 +124,42 @@ void OverlayEditor::reset(){
 }
 
 void OverlayEditor::saveToFile(const QString& path){
-   QString output = "overlays = " + QString::number(totalLayers) + "\n";
+   config_file_t* fileInput = config_file_new(NULL);
 
-   output += "\n";
+   //set layer count
+   config_set_int(fileInput, "overlays", totalLayers);
 
-   //build all layer info
-   for(int index = 0; index < totalLayers; index++){
-      output += "overlay" + QString::number(index) + "_full_screen = true\n";
-      output += "overlay" + QString::number(index) + "_normalized = true\n";
-      output += "overlay" + QString::number(index) + "_name = ovrly" + QString::number(index) + "\n";
-      output += "overlay" + QString::number(index) + "_range_mod = 1.5\n";
-      output += "overlay" + QString::number(index) + "_alpha_mod = 2.0\n";
+   //save layer parameters
+   for(int currentOverlay = 0; currentOverlay < totalLayers; currentOverlay++){
+      QString item = "overlay" + QString::number(currentOverlay);
+      QString itemRangeMod = item + "_range_mod";
+      QString itemAlphaMod = item + "_alpha_mod";
+
+      if(layers[currentOverlay].rangeModExists)
+         config_set_double(fileInput, itemRangeMod.toStdString().c_str(), layers[currentOverlay].rangeMod);
+      if(layers[currentOverlay].alphaModExists)
+         config_set_double(fileInput, itemAlphaMod.toStdString().c_str(), layers[currentOverlay].alphaMod);
    }
 
-   output += "\n";
+   //add objects
+   for(int currentOverlay = 0; currentOverlay < totalLayers; currentOverlay++){
+      for(int button = 0; button < objects.size(); button++){
+         if(objects[button].l == currentOverlay){
+            QString item = "overlay" + QString::number(currentOverlay) + "_desc" + QString::number(button);
+            QString value = objects[button].b + "," + QString::number(objects[button].x + objects[button].w / 2.0) + "," + QString::number(objects[button].y + objects[button].h / 2.0) + "," + (objects[button].r ? "radial" : "rect") + "," + QString::number(objects[button].w / 2.0) + "," + QString::number(objects[button].h / 2.0);
 
-   //add all object info
-   for(int index = 0; index < objects.size(); index++)
-      output += stringifyObject(objects[index]);
+            config_set_string(fileInput, item.toStdString().c_str(), value.toStdString().c_str());
+            config_set_string(fileInput, (item + "_overlay").toStdString().c_str(), objects[button].in.toStdString().c_str());
+         }
+      }
+   }
+
+   //save out file
+   config_file_write(fileInput, path.toStdString().c_str());
 }
 
 void OverlayEditor::loadFromFile(const QString& path){
-   config_file_t* fileInput;
-
-   fileInput = config_file_new(path.toStdString().c_str());
+   config_file_t* fileInput = config_file_new(path.toStdString().c_str());
 
    //only continue if file existed
    if(!fileInput)
@@ -167,8 +168,21 @@ void OverlayEditor::loadFromFile(const QString& path){
    //start with default state
    reset();
 
+   //get layer count
    config_get_int(fileInput, "overlays", &totalLayers);
+   layers.resize(totalLayers);
 
+   //save layer parameters for later
+   for(int currentOverlay = 0; currentOverlay < totalLayers; currentOverlay++){
+      QString item = "overlay" + QString::number(currentOverlay);
+      QString itemRangeMod = item + "_range_mod";
+      QString itemAlphaMod = item + "_alpha_mod";
+
+      layers[currentOverlay].rangeModExists = config_get_double(fileInput, itemRangeMod.toStdString().c_str(), &layers[currentOverlay].rangeMod);
+      layers[currentOverlay].alphaModExists = config_get_double(fileInput, itemAlphaMod.toStdString().c_str(), &layers[currentOverlay].alphaMod);
+   }
+
+   //add objects
    for(int currentOverlay = 0; currentOverlay < totalLayers; currentOverlay++){
       int button = 0;
 
@@ -183,6 +197,8 @@ void OverlayEditor::loadFromFile(const QString& path){
          //no more entrys
          if(!success)
             break;
+
+         //printf("Is there quotes:%s\n", overlayString);
 
          //get image name
          config_get_string(fileInput, (item + "_overlay").toStdString().c_str(), &imageName);
@@ -199,8 +215,16 @@ void OverlayEditor::loadFromFile(const QString& path){
          newObject.p = QPixmap(QFileInfo(path).path() + "/" + newObject.in);
          newObject.l = currentOverlay;
 
-         objects += newObject;
+         //recalculate size to top left corner instead of radius from center
+         newObject.x -= newObject.w;
+         newObject.y -= newObject.h;
+         newObject.w *= 2.0;
+         newObject.h *= 2.0;
 
+         //free duplicated string
+         free(imageName);
+
+         objects += newObject;
          button++;
       }
    }
@@ -291,27 +315,25 @@ void OverlayEditor::add(const QString& buttonName, const QString& imagePath){
 void OverlayEditor::remove(){
    //mark deleted objects
    for(int index = 0; index < selectedObjects.size(); index++)
-      selectedObjects[index]->i = -1;
+      selectedObjects[index]->b = "";
    selectedObjects.clear();
 
    //destroy empty objects
    for(int index = 0; index < objects.size(); index++)
-      while(index < objects.size() && objects[index].i == -1)
+      while(index < objects.size() && objects[index].b.isEmpty())
          objects.remove(index);
-
-   //assign new indexes
-   for(int index = 0; index < objects.size(); index++)
-      objects[index].i = index;
 
    render();
 }
 
 void OverlayEditor::resize(double w, double h){
    for(int index = 0; index < selectedObjects.size(); index++){
-      selectedObjects[index]->x -= w / 2;
-      selectedObjects[index]->y -= h / 2;
-      selectedObjects[index]->w += w;
-      selectedObjects[index]->h += h;
+      selectedObjects[index]->x += selectedObjects[index]->w / 2;
+      selectedObjects[index]->y += selectedObjects[index]->h / 2;
+      selectedObjects[index]->w *= w;
+      selectedObjects[index]->h *= h;
+      selectedObjects[index]->x -= selectedObjects[index]->w / 2;
+      selectedObjects[index]->y -= selectedObjects[index]->h / 2;
    }
 
    render();
