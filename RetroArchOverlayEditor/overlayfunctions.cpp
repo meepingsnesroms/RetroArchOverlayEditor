@@ -47,9 +47,9 @@ void OverlayFunctions::on_newOverlay_clicked(){
 }
 
 void OverlayFunctions::on_saveOverlay_clicked(){
-
+   ((MainWindow*)parentWidget())->editor->saveToFile(ui->overlayPath->text());
 }
 
 void OverlayFunctions::on_loadOverlay_clicked(){
-
+   ((MainWindow*)parentWidget())->editor->loadFromFile(ui->overlayPath->text());
 }

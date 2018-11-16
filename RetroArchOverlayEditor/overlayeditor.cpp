@@ -169,8 +169,40 @@ void OverlayEditor::loadFromFile(const QString& path){
 
    config_get_int(fileInput, "overlays", &totalLayers);
 
-   for(int index = 0; index < totalLayers; index++){
+   for(int currentOverlay = 0; currentOverlay < totalLayers; currentOverlay++){
+      int button = 0;
 
+      while(true){
+         overlay_object newObject;
+         QString item = "overlay" + QString::number(currentOverlay) + "_desc" + QString::number(button);
+         char overlayString[256];
+         bool success = config_get_array(fileInput, item.toStdString().c_str(), overlayString, sizeof(overlayString));
+         QStringList arrayItems;
+         char* imageName;
+
+         //no more entrys
+         if(!success)
+            break;
+
+         //get image name
+         config_get_string(fileInput, (item + "_overlay").toStdString().c_str(), &imageName);
+
+         arrayItems = QString(overlayString).split(",");
+
+         newObject.b = arrayItems[0];
+         newObject.x = arrayItems[1].toDouble();
+         newObject.y = arrayItems[2].toDouble();
+         newObject.r = arrayItems[3] == "radial";
+         newObject.w = arrayItems[4].toDouble();
+         newObject.h = arrayItems[5].toDouble();
+         newObject.in = QString(imageName);
+         newObject.p = QPixmap(QFileInfo(path).path() + "/" + newObject.in);
+         newObject.l = currentOverlay;
+
+         objects += newObject;
+
+         button++;
+      }
    }
 
    render();
