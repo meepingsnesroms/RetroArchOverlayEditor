@@ -15,6 +15,9 @@ OverlayFunctions::OverlayFunctions(QWidget* parent) :
    //this window is not closeable, minimizable or fullscreen capable
    setWindowFlags(Qt::Window | Qt::WindowTitleHint | Qt::CustomizeWindowHint);
 
+   ui->setLayer->setMinimum(0);
+   ui->setLayer->setMaximum(0);
+
    ui->buttonSize->setValue(50);
 }
 
@@ -38,6 +41,10 @@ void OverlayFunctions::on_buttonSetRectangular_clicked(){
    ((MainWindow*)parentWidget())->editor->setCollisionType(false);
 }
 
+void OverlayFunctions::on_setLayer_valueChanged(int arg1){
+   ((MainWindow*)parentWidget())->editor->setLayer(arg1);
+}
+
 void OverlayFunctions::on_setBackground_clicked(){
    ((MainWindow*)parentWidget())->editor->setBackground(ui->imagePath->text());
 }
@@ -52,4 +59,5 @@ void OverlayFunctions::on_saveOverlay_clicked(){
 
 void OverlayFunctions::on_loadOverlay_clicked(){
    ((MainWindow*)parentWidget())->editor->loadFromFile(ui->overlayPath->text());
+   ui->setLayer->setMaximum(((MainWindow*)parentWidget())->editor->getTotalLayers() - 1);
 }

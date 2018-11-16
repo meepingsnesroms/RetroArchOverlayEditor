@@ -67,6 +67,27 @@
     </layout>
    </item>
    <item>
+    <layout class="QHBoxLayout" name="setLayerContainer">
+     <item>
+      <widget class="QLabel" name="label_2">
+       <property name="text">
+        <string>Layer:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSpinBox" name="setLayer">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
     <widget class="QPushButton" name="setBackground">
      <property name="text">
       <string>Set Background</string>

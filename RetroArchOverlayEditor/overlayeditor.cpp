@@ -198,8 +198,6 @@ void OverlayEditor::loadFromFile(const QString& path){
          if(!success)
             break;
 
-         //printf("Is there quotes:%s\n", overlayString);
-
          //get image name
          config_get_string(fileInput, (item + "_overlay").toStdString().c_str(), &imageName);
 
@@ -240,7 +238,40 @@ void OverlayEditor::setCanvasSize(int w, int h){
 }
 
 void OverlayEditor::setLayer(int layer){
-   currentLayer = layer;
+   if(layer >= 0 && layer < totalLayers){
+      currentLayer = layer;
+      selectedObjects.clear();
+
+      render();
+   }
+}
+
+void OverlayEditor::newLayer(){
+   layers += {false, false, 0.0, 0.0};
+   totalLayers++;
+}
+
+void OverlayEditor::removeLayer(int layer){
+   //cant delete layer 0
+   if(layer > 0 && layer < totalLayers){
+      //clean up current layer if needed
+      if(layer == currentLayer)
+         setLayer(0);
+
+      //destroy layers objects and shift all other layers down 1
+      for(int index = 0; index < objects.size(); index++){
+         if(objects[index].l == layer){
+            objects.remove(index);
+            index--;//account for removed index
+         }
+         else if(objects[index].l > layer){
+            objects[index].l--;
+         }
+      }
+
+      layers.remove(layer);
+      totalLayers--;
+   }
 }
 
 void OverlayEditor::setBackground(const QString& imagePath){
@@ -289,7 +320,6 @@ void OverlayEditor::mouseUp(){
 
    render();
 }
-
 
 void OverlayEditor::add(const QString& buttonName, const QString& imagePath){
    QPixmap buttonImage(imagePath);
