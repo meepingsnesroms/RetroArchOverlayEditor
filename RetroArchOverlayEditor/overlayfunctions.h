@@ -19,7 +19,8 @@ private slots:
    void on_deleteButton_clicked();
    void on_buttonSetRadial_clicked();
    void on_buttonSetRectangular_clicked();
-   void on_setLayer_valueChanged(int arg1);
+   void on_buttonSize_sliderReleased();
+   void on_setLayer_valueChanged(int value);
    void on_setBackground_clicked();
    void on_newOverlay_clicked();
    void on_saveOverlay_clicked();

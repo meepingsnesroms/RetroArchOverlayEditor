@@ -1,16 +1,18 @@
 #include "overlayeditor.h"
 
+//Qt headers
 #include <QtGlobal>
 #include <QString>
 #include <QPixmap>
 #include <QFile>
 #include <QFileInfo>
 
-#include "libretro-common/include/file/config_file.h"
+//libretro headers
+#include <file/config_file.h>
 
 
 OverlayEditor::OverlayEditor(int w, int h){
-   framebuffer = new QPixmap(w, h);
+   framebuffer = new QPixmap(w > 0 ? w : 1, h > 0 ? h : 1);//0 or negative sized framebuffer will cause problems
    renderer = new QPainter(framebuffer);
    renderer->setBrush(QColor("Black"));
    renderer->drawRect(QRect(0, 0, framebuffer->width(), framebuffer->height()));
@@ -75,11 +77,22 @@ void OverlayEditor::render(){
 
    //clear
    if(!background.isNull()){
-      renderer->drawPixmap(QRect(0, 0, framebuffer->width(), framebuffer->height()), background, QRect(0.0, 0.0, background.width(), background.height()));
+      renderer->drawPixmap(QRect(0, 0, framebuffer->width(), framebuffer->height()), background, QRect(0, 0, background.width(), background.height()));
    }
    else{
       renderer->setBrush(QColor("Black"));
       renderer->drawRect(QRect(0, 0, framebuffer->width(), framebuffer->height()));
+   }
+
+   //draw grid
+   if(gridSize > 0.0){
+      renderer->setPen(QPen(gridColor, (double)framebuffer->width() / 1000.0));
+      for(double hLine = 0.0; hLine <= 1.0; hLine += gridSize){
+         renderer->drawLine(QLine(0, hLine * framebuffer->height(), framebuffer->width() - 1, hLine * framebuffer->height()));
+      }
+      for(double vLine = 0.0; vLine <= 1.0; vLine += gridSize){
+         renderer->drawLine(QLine(vLine * framebuffer->width(), 0, vLine * framebuffer->width(), framebuffer->height() - 1));
+      }
    }
 
    //draw all objects
@@ -114,6 +127,8 @@ void OverlayEditor::reset(){
    objects.clear();
    selectedObjects.clear();
    background = QPixmap();
+   gridSize = -1.0;
+   gridColor = QColor("Blue");
    mouseActive = false;
    mouseDownX = -1.0;
    mouseDownY = -1.0;
@@ -240,10 +255,12 @@ void OverlayEditor::loadFromFile(const QString& path){
 }
 
 void OverlayEditor::setCanvasSize(int w, int h){
-   delete renderer;
-   delete framebuffer;
-   framebuffer = new QPixmap(w, h);
-   renderer = new QPainter(framebuffer);
+   if(w > 0 && h > 0){
+      delete renderer;
+      delete framebuffer;
+      framebuffer = new QPixmap(w, h);
+      renderer = new QPainter(framebuffer);
+   }
 }
 
 void OverlayEditor::setLayer(int layer){
@@ -297,6 +314,11 @@ void OverlayEditor::setBackground(const QString& imagePath){
    }
 
    render();
+}
+
+void OverlayEditor::setGrid(double size, QColor color){
+   gridSize = size;
+   gridColor = color;
 }
 
 void OverlayEditor::mouseDown(double x, double y){

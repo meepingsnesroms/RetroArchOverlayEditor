@@ -5,6 +5,7 @@
 #include <QString>
 #include <QPixmap>
 #include <QPainter>
+#include <QColor>
 
 typedef struct{
    double  x;
@@ -35,6 +36,8 @@ private:
    QVector<overlay_object>  objects;
    QVector<overlay_object*> selectedObjects;
    QPixmap                  background;
+   double                   gridSize;
+   QColor                   gridColor;
    int                      currentLayer;
    int                      totalLayers;
    bool                     mouseActive;
@@ -61,6 +64,7 @@ public:
    void setOverlayText(const QString& data);
    void setCanvasSize(int w, int h);
    void setBackground(const QString& imagePath);
+   void setGrid(double size, QColor color);//-1.0 = disabled
    int  getTotalLayers() const{return totalLayers;}
    int  getLayer() const{return currentLayer;}
    void setLayer(int layer);

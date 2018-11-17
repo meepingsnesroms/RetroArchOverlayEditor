@@ -41,8 +41,21 @@ void OverlayFunctions::on_buttonSetRectangular_clicked(){
    ((MainWindow*)parentWidget())->editor->setCollisionType(false);
 }
 
-void OverlayFunctions::on_setLayer_valueChanged(int arg1){
-   ((MainWindow*)parentWidget())->editor->setLayer(arg1);
+void OverlayFunctions::on_buttonSize_sliderReleased(){
+   double scaler = (double)ui->buttonSize->value() / 50.0;
+
+   //convert range to 0.5<->2.0
+   if(scaler < 1.0){
+      scaler /= 2.0;
+      scaler += 0.5;
+   }
+
+   ((MainWindow*)parentWidget())->editor->resize(scaler, scaler);
+   ui->buttonSize->setValue(50);
+}
+
+void OverlayFunctions::on_setLayer_valueChanged(int value){
+   ((MainWindow*)parentWidget())->editor->setLayer(value);
 }
 
 void OverlayFunctions::on_setBackground_clicked(){
