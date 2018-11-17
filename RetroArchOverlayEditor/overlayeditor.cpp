@@ -132,26 +132,35 @@ void OverlayEditor::saveToFile(const QString& path){
    //save layer parameters
    for(int currentOverlay = 0; currentOverlay < totalLayers; currentOverlay++){
       QString item = "overlay" + QString::number(currentOverlay);
-      QString itemRangeMod = item + "_range_mod";
-      QString itemAlphaMod = item + "_alpha_mod";
+
+      config_set_string(fileInput, (item + "_name").toStdString().c_str(), item.toStdString().c_str());
+      config_set_bool(fileInput, (item + "_full_screen").toStdString().c_str(), true);
+      config_set_bool(fileInput, (item + "_normalized").toStdString().c_str(), true);
 
       if(layers[currentOverlay].rangeModExists)
-         config_set_double(fileInput, itemRangeMod.toStdString().c_str(), layers[currentOverlay].rangeMod);
+         config_set_double(fileInput, (item + "_range_mod").toStdString().c_str(), layers[currentOverlay].rangeMod);
       if(layers[currentOverlay].alphaModExists)
-         config_set_double(fileInput, itemAlphaMod.toStdString().c_str(), layers[currentOverlay].alphaMod);
+         config_set_double(fileInput, (item + "_alpha_mod").toStdString().c_str(), layers[currentOverlay].alphaMod);
    }
 
    //add objects
    for(int currentOverlay = 0; currentOverlay < totalLayers; currentOverlay++){
+      QString curOverlayStr = "overlay" + QString::number(currentOverlay);
+      int layerButtons = 0;
+
       for(int button = 0; button < objects.size(); button++){
          if(objects[button].l == currentOverlay){
-            QString item = "overlay" + QString::number(currentOverlay) + "_desc" + QString::number(button);
+            QString item = curOverlayStr + "_desc" + QString::number(button);
             QString value = objects[button].b + "," + QString::number(objects[button].x + objects[button].w / 2.0) + "," + QString::number(objects[button].y + objects[button].h / 2.0) + "," + (objects[button].r ? "radial" : "rect") + "," + QString::number(objects[button].w / 2.0) + "," + QString::number(objects[button].h / 2.0);
 
             config_set_string(fileInput, item.toStdString().c_str(), value.toStdString().c_str());
             config_set_string(fileInput, (item + "_overlay").toStdString().c_str(), objects[button].in.toStdString().c_str());
+
+            layerButtons++;
          }
       }
+
+      config_set_int(fileInput, (curOverlayStr + "_descs").toStdString().c_str(), layerButtons);
    }
 
    //save out file
@@ -175,20 +184,21 @@ void OverlayEditor::loadFromFile(const QString& path){
    //save layer parameters for later
    for(int currentOverlay = 0; currentOverlay < totalLayers; currentOverlay++){
       QString item = "overlay" + QString::number(currentOverlay);
-      QString itemRangeMod = item + "_range_mod";
-      QString itemAlphaMod = item + "_alpha_mod";
 
-      layers[currentOverlay].rangeModExists = config_get_double(fileInput, itemRangeMod.toStdString().c_str(), &layers[currentOverlay].rangeMod);
-      layers[currentOverlay].alphaModExists = config_get_double(fileInput, itemAlphaMod.toStdString().c_str(), &layers[currentOverlay].alphaMod);
+      layers[currentOverlay].rangeModExists = config_get_double(fileInput, (item + "_range_mod").toStdString().c_str(), &layers[currentOverlay].rangeMod);
+      layers[currentOverlay].alphaModExists = config_get_double(fileInput, (item + "_alpha_mod").toStdString().c_str(), &layers[currentOverlay].alphaMod);
    }
 
    //add objects
    for(int currentOverlay = 0; currentOverlay < totalLayers; currentOverlay++){
-      int button = 0;
+      QString curOverlayStr = "overlay" + QString::number(currentOverlay);
+      int totalButtons;
 
-      while(true){
+      config_get_int(fileInput, (curOverlayStr + "_descs").toStdString().c_str(), &totalButtons);
+
+      for(int button = 0; button < totalButtons; button++){
          overlay_object newObject;
-         QString item = "overlay" + QString::number(currentOverlay) + "_desc" + QString::number(button);
+         QString item = curOverlayStr + "_desc" + QString::number(button);
          char overlayString[256];
          bool success = config_get_array(fileInput, item.toStdString().c_str(), overlayString, sizeof(overlayString));
          QStringList arrayItems;
@@ -223,7 +233,6 @@ void OverlayEditor::loadFromFile(const QString& path){
          free(imageName);
 
          objects += newObject;
-         button++;
       }
    }
 
