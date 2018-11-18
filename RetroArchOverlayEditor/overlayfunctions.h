@@ -20,6 +20,7 @@ private slots:
    void on_buttonSetRadial_clicked();
    void on_buttonSetRectangular_clicked();
    void on_buttonSize_sliderReleased();
+   void on_heightAdjuster_sliderReleased();
    void on_expandGroup_sliderReleased();
    void on_setLayer_valueChanged(int value);
    void on_setBackground_clicked();

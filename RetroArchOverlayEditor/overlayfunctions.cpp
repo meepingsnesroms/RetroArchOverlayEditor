@@ -19,6 +19,7 @@ OverlayFunctions::OverlayFunctions(QWidget* parent) :
    ui->setLayer->setMaximum(0);
 
    ui->buttonSize->setValue(50);
+   ui->heightAdjuster->setValue(50);
    ui->expandGroup->setValue(50);
 }
 
@@ -53,6 +54,19 @@ void OverlayFunctions::on_buttonSize_sliderReleased(){
 
    ((MainWindow*)parentWidget())->editor->resize(scaler, scaler);
    ui->buttonSize->setValue(50);
+}
+
+void OverlayFunctions::on_heightAdjuster_sliderReleased(){
+   double scaler = (double)ui->heightAdjuster->value() / 50.0;
+
+   //convert range to 0.5<->2.0
+   if(scaler < 1.0){
+      scaler /= 2.0;
+      scaler += 0.5;
+   }
+
+   ((MainWindow*)parentWidget())->editor->resize(1.0, scaler);
+   ui->heightAdjuster->setValue(50);
 }
 
 void OverlayFunctions::on_expandGroup_sliderReleased(){

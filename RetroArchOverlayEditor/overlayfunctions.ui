@@ -67,6 +67,24 @@
     </layout>
    </item>
    <item>
+    <layout class="QHBoxLayout" name="heightAdjusterContainer">
+     <item>
+      <widget class="QLabel" name="label_4">
+       <property name="text">
+        <string>Height:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSlider" name="heightAdjuster">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
     <layout class="QHBoxLayout" name="expandGroupContainer">
      <item>
       <widget class="QLabel" name="label_3">

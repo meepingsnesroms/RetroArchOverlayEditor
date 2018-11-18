@@ -401,25 +401,27 @@ void OverlayEditor::resize(double w, double h){
 }
 
 void OverlayEditor::resizeGroupSpacing(double w, double h){
-   double groupCenterX = 0.0;
-   double groupCenterY = 0.0;
+   if(selectedObjects.size() > 1){
+      double groupCenterX = 0.0;
+      double groupCenterY = 0.0;
 
-   for(int index = 0; index < selectedObjects.size(); index++){
-      groupCenterX += selectedObjects[index]->x + selectedObjects[index]->w / 2;
-      groupCenterY += selectedObjects[index]->y + selectedObjects[index]->h / 2;
+      for(int index = 0; index < selectedObjects.size(); index++){
+         groupCenterX += selectedObjects[index]->x + selectedObjects[index]->w / 2;
+         groupCenterY += selectedObjects[index]->y + selectedObjects[index]->h / 2;
+      }
+      groupCenterX /= selectedObjects.size();
+      groupCenterY /= selectedObjects.size();
+
+      for(int index = 0; index < selectedObjects.size(); index++){
+         double distanceFromGroupCenterX = selectedObjects[index]->x + selectedObjects[index]->w / 2 - groupCenterX;
+         double distanceFromGroupCenterY = selectedObjects[index]->y + selectedObjects[index]->h / 2 - groupCenterY;
+
+         selectedObjects[index]->x += distanceFromGroupCenterX * (w - 1.0);
+         selectedObjects[index]->y += distanceFromGroupCenterY * (h - 1.0);
+      }
+
+      render();
    }
-   groupCenterX /= selectedObjects.size();
-   groupCenterY /= selectedObjects.size();
-
-   for(int index = 0; index < selectedObjects.size(); index++){
-      double distanceFromGroupCenterX = selectedObjects[index]->x + selectedObjects[index]->w / 2 - groupCenterX;
-      double distanceFromGroupCenterY = selectedObjects[index]->y + selectedObjects[index]->h / 2 - groupCenterY;
-
-      selectedObjects[index]->x += distanceFromGroupCenterX * (w - 1.0);
-      selectedObjects[index]->y += distanceFromGroupCenterY * (h - 1.0);
-   }
-
-   render();
 }
 
 void OverlayEditor::setCollisionType(bool r){
