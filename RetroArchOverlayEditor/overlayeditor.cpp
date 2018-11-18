@@ -88,17 +88,17 @@ void OverlayEditor::render(){
    if(gridSize > 0.0){
       renderer->setPen(QPen(gridColor, (double)framebuffer->width() / 1000.0));
       for(double hLine = 0.0; hLine <= 1.0; hLine += gridSize){
-         renderer->drawLine(QLine(0, hLine * framebuffer->height(), framebuffer->width() - 1, hLine * framebuffer->height()));
+         renderer->drawLine(QLine(0, hLine * (framebuffer->height() - 1), framebuffer->width() - 1, hLine * (framebuffer->height() - 1)));
       }
       for(double vLine = 0.0; vLine <= 1.0; vLine += gridSize){
-         renderer->drawLine(QLine(vLine * framebuffer->width(), 0, vLine * framebuffer->width(), framebuffer->height() - 1));
+         renderer->drawLine(QLine(vLine * (framebuffer->width() - 1), 0, vLine * (framebuffer->width() - 1), framebuffer->height() - 1));
       }
    }
 
    //draw all objects
    for(int index = 0; index < objects.size(); index++){
       if(objects[index].l == currentLayer)
-         renderer->drawPixmap(QRect(objects[index].x * framebuffer->width(), objects[index].y * framebuffer->height(), objects[index].w * framebuffer->width(), objects[index].h * framebuffer->height()), objects[index].p, QRect(0, 0, objects[index].p.width(), objects[index].p.height()));
+         renderer->drawPixmap(QRect(objects[index].x * (framebuffer->width() - 1), objects[index].y * (framebuffer->height() - 1), objects[index].w * framebuffer->width(), objects[index].h * framebuffer->height()), objects[index].p, QRect(0, 0, objects[index].p.width(), objects[index].p.height()));
    }
 
    renderer->setOpacity(0.5);
@@ -106,7 +106,7 @@ void OverlayEditor::render(){
       //still selecting, draw white transparent square around selection area
       if(mouseActive){
          renderer->setBrush(QColor("White"));
-         renderer->drawRect(QRect(qMin(mouseDownX, mouseLastX) * framebuffer->width(), qMin(mouseDownY, mouseLastY) * framebuffer->height(), qAbs(mouseLastX - mouseDownX) * framebuffer->width(), qAbs(mouseLastY - mouseDownY) * framebuffer->height()));
+         renderer->drawRect(QRect(qMin(mouseDownX, mouseLastX) * (framebuffer->width() - 1), qMin(mouseDownY, mouseLastY) * (framebuffer->height() - 1), qAbs(mouseLastX - mouseDownX) * framebuffer->width(), qAbs(mouseLastY - mouseDownY) * framebuffer->height()));
       }
    }
    else{
@@ -114,9 +114,9 @@ void OverlayEditor::render(){
       renderer->setBrush(QColor("Green"));
       for(int index = 0; index < selectedObjects.size(); index++){
          if(selectedObjects[index]->r)
-            renderer->drawEllipse(QRect(selectedObjects[index]->x * framebuffer->width(), selectedObjects[index]->y * framebuffer->height(), selectedObjects[index]->w * framebuffer->width(), selectedObjects[index]->h * framebuffer->height()));
+            renderer->drawEllipse(QRect(selectedObjects[index]->x * (framebuffer->width() - 1), selectedObjects[index]->y * (framebuffer->height() - 1), selectedObjects[index]->w * framebuffer->width(), selectedObjects[index]->h * framebuffer->height()));
          else
-            renderer->drawRect(QRect(selectedObjects[index]->x * framebuffer->width(), selectedObjects[index]->y * framebuffer->height(), selectedObjects[index]->w * framebuffer->width(), selectedObjects[index]->h * framebuffer->height()));
+            renderer->drawRect(QRect(selectedObjects[index]->x * (framebuffer->width() - 1), selectedObjects[index]->y * (framebuffer->height() - 1), selectedObjects[index]->w * framebuffer->width(), selectedObjects[index]->h * framebuffer->height()));
       }
    }
 }
@@ -395,6 +395,28 @@ void OverlayEditor::resize(double w, double h){
       selectedObjects[index]->h *= h;
       selectedObjects[index]->x -= selectedObjects[index]->w / 2;
       selectedObjects[index]->y -= selectedObjects[index]->h / 2;
+   }
+
+   render();
+}
+
+void OverlayEditor::resizeGroupSpacing(double w, double h){
+   double groupCenterX = 0.0;
+   double groupCenterY = 0.0;
+
+   for(int index = 0; index < selectedObjects.size(); index++){
+      groupCenterX += selectedObjects[index]->x + selectedObjects[index]->w / 2;
+      groupCenterY += selectedObjects[index]->y + selectedObjects[index]->h / 2;
+   }
+   groupCenterX /= selectedObjects.size();
+   groupCenterY /= selectedObjects.size();
+
+   for(int index = 0; index < selectedObjects.size(); index++){
+      double distanceFromGroupCenterX = selectedObjects[index]->x + selectedObjects[index]->w / 2 - groupCenterX;
+      double distanceFromGroupCenterY = selectedObjects[index]->y + selectedObjects[index]->h / 2 - groupCenterY;
+
+      selectedObjects[index]->x += distanceFromGroupCenterX * (w - 1.0);
+      selectedObjects[index]->y += distanceFromGroupCenterY * (h - 1.0);
    }
 
    render();

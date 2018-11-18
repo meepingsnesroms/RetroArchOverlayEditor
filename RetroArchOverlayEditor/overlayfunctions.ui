@@ -67,6 +67,24 @@
     </layout>
    </item>
    <item>
+    <layout class="QHBoxLayout" name="expandGroupContainer">
+     <item>
+      <widget class="QLabel" name="label_3">
+       <property name="text">
+        <string>Expand Group:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSlider" name="expandGroup">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
     <layout class="QHBoxLayout" name="setLayerContainer">
      <item>
       <widget class="QLabel" name="label_2">

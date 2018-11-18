@@ -81,6 +81,7 @@ public:
    void add(const QString& buttonName, const QString& imagePath);
    void remove();
    void resize(double w, double h);//multiplier, 1.0 = stay the same
+   void resizeGroupSpacing(double w, double h);//multiplier, 1.0 = stay the same
    void setCollisionType(bool r);
 };
 
