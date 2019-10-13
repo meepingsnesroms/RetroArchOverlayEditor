@@ -355,7 +355,12 @@ void OverlayEditor::mouseUp(){
 void OverlayEditor::add(const QString& buttonName, const QString& imagePath){
    QPixmap buttonImage(imagePath);
 
-   if(!buttonName.isEmpty() && !buttonImage.isNull()){
+   if(buttonImage.isNull()){
+      buttonImage = QPixmap(1,1);
+      buttonImage.fill(QColor(0x00, 0xFF, 0x00, 0x77));
+   }
+
+   if(!buttonName.isEmpty()){
       overlay_object newObject;
 
       newObject.x = 0.5 - 0.05;
