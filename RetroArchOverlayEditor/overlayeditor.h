@@ -46,6 +46,7 @@ private:
    double                   mouseLastX;
    double                   mouseLastY;
 
+   QPixmap nullImage();
    bool hitboxDot(double x1, double y1, double w1, double h1, double x2, double y2);
    bool hitboxSquare(double x1, double y1, double w1, double h1, double x2, double y2, double w2, double h2);
    bool touchedSelectedObject(double x, double y);

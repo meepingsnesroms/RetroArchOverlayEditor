@@ -26,6 +26,15 @@ OverlayEditor::~OverlayEditor(){
    delete framebuffer;
 }
 
+QPixmap OverlayEditor::nullImage(){
+   QPixmap image(1, 1);
+
+   //transparent green screen color
+   image.fill(QColor(0x00, 0xFF, 0x00, 0x77));
+
+   return image;
+}
+
 bool OverlayEditor::hitboxDot(double x1, double y1, double w1, double h1, double x2, double y2){
    if(x2 >= x1 && x2 <= x1 + w1 && y2 >= y1 && y2 <= y1 + h1)
       return true;
@@ -169,7 +178,8 @@ void OverlayEditor::saveToFile(const QString& path){
             QString value = objects[button].b + "," + QString::number(objects[button].x + objects[button].w / 2.0) + "," + QString::number(objects[button].y + objects[button].h / 2.0) + "," + (objects[button].r ? "radial" : "rect") + "," + QString::number(objects[button].w / 2.0) + "," + QString::number(objects[button].h / 2.0);
 
             config_set_string(fileInput, item.toStdString().c_str(), value.toStdString().c_str());
-            config_set_string(fileInput, (item + "_overlay").toStdString().c_str(), objects[button].in.toStdString().c_str());
+            if(objects[button].in != "")
+               config_set_string(fileInput, (item + "_overlay").toStdString().c_str(), objects[button].in.toStdString().c_str());
 
             layerButtons++;
          }
@@ -217,14 +227,17 @@ void OverlayEditor::loadFromFile(const QString& path){
          char overlayString[256];
          bool success = config_get_array(fileInput, item.toStdString().c_str(), overlayString, sizeof(overlayString));
          QStringList arrayItems;
-         char* imageName;
+         char* imageNamePtr;
+         QString imageName;
 
          //no more entrys
          if(!success)
             break;
 
          //get image name
-         config_get_string(fileInput, (item + "_overlay").toStdString().c_str(), &imageName);
+         config_get_string(fileInput, (item + "_overlay").toStdString().c_str(), &imageNamePtr);
+
+         imageName = imageNamePtr;
 
          arrayItems = QString(overlayString).split(",");
 
@@ -234,8 +247,8 @@ void OverlayEditor::loadFromFile(const QString& path){
          newObject.r = arrayItems[3] == "radial";
          newObject.w = arrayItems[4].toDouble();
          newObject.h = arrayItems[5].toDouble();
-         newObject.in = QString(imageName);
-         newObject.p = QPixmap(QFileInfo(path).path() + "/" + newObject.in);
+         newObject.in = imageName;
+         newObject.p = imageName != "" ? QPixmap(QFileInfo(path).path() + "/" + newObject.in) : nullImage();
          newObject.l = currentOverlay;
 
          //recalculate size to top left corner instead of radius from center
@@ -245,7 +258,7 @@ void OverlayEditor::loadFromFile(const QString& path){
          newObject.h *= 2.0;
 
          //free duplicated string
-         free(imageName);
+         free(imageNamePtr);
 
          objects += newObject;
       }
@@ -355,10 +368,8 @@ void OverlayEditor::mouseUp(){
 void OverlayEditor::add(const QString& buttonName, const QString& imagePath){
    QPixmap buttonImage(imagePath);
 
-   if(buttonImage.isNull()){
-      buttonImage = QPixmap(1,1);
-      buttonImage.fill(QColor(0x00, 0xFF, 0x00, 0x77));
-   }
+   if(buttonImage.isNull())
+      buttonImage = nullImage();
 
    if(!buttonName.isEmpty()){
       overlay_object newObject;
@@ -369,7 +380,7 @@ void OverlayEditor::add(const QString& buttonName, const QString& imagePath){
       newObject.h = 0.1;
       newObject.l = currentLayer;
       newObject.b = buttonName;
-      newObject.in = QFileInfo(imagePath).fileName();
+      newObject.in = buttonImage.isNull() ? "" : QFileInfo(imagePath).fileName();
       newObject.p = buttonImage;
 
       objects += newObject;
