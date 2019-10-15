@@ -32,7 +32,16 @@ private slots:
    void save();
    void saveAs();
 
-   //TODO: action menu
+   //action menu
+   void setBackground();
+   void addButton();
+   void addJoystick();
+   void deleteObjects();
+   void setCircularObjects();
+   void setSquareObjects();
+   void setObjectsCoordinates();
+   void alignObjectWithBorderPixels();
+   void advancedEdit();
 
    //TODO: about menu
 

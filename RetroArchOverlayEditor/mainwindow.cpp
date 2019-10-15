@@ -40,6 +40,21 @@ MainWindow::MainWindow(QWidget* parent) :
    connect(saveAsAction, &QAction::triggered, this, &MainWindow::saveAs);
    ui->menuFile->addAction(saveAsAction);
 
+   QAction *setBackgroundAction = new QAction("Set Background", this);
+   setBackgroundAction->setStatusTip("Change the current background");
+   connect(setBackgroundAction, &QAction::triggered, this, &MainWindow::setBackground);
+   ui->menuActions->addAction(setBackgroundAction);
+
+   QAction *addButtonAction = new QAction("Add Button", this);
+   addButtonAction->setStatusTip("Add a button");
+   connect(addButtonAction, &QAction::triggered, this, &MainWindow::addButton);
+   ui->menuActions->addAction(addButtonAction);
+
+   QAction *addJoystickAction = new QAction("Add Joystick", this);
+   addJoystickAction->setStatusTip("Add a joystick");
+   connect(addJoystickAction, &QAction::triggered, this, &MainWindow::addJoystick);
+   ui->menuActions->addAction(addJoystickAction);
+
    connect(refreshDisplay, SIGNAL(timeout()), this, SLOT(updateDisplay()));
    refreshDisplay->start(1000 / 15);//15 FPS
 
@@ -82,4 +97,43 @@ void MainWindow::saveAs(){
 
    if(overlay != "")
       editor->saveToFile(overlay);
+}
+
+void MainWindow::setBackground(){
+   QString image = QFileDialog::getOpenFileName(this, "Load Background Image", QDir::root().path(), "Image (*.png *.jpg *.jpeg *.bmp)");
+
+   if(image != "")
+      editor->setBackground(image);
+}
+
+void MainWindow::addButton(){
+
+}
+
+void MainWindow::addJoystick(){
+
+}
+
+void MainWindow::deleteObjects(){
+
+}
+
+void MainWindow::setCircularObjects(){
+
+}
+
+void MainWindow::setSquareObjects(){
+
+}
+
+void MainWindow::setObjectsCoordinates(){
+
+}
+
+void MainWindow::alignObjectWithBorderPixels(){
+
+}
+
+void MainWindow::advancedEdit(){
+
 }
