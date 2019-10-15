@@ -1,6 +1,6 @@
 #include "overlayeditor.h"
 
-//Qt headers
+//QT headers
 #include <QtGlobal>
 #include <QString>
 #include <QPixmap>
@@ -48,7 +48,7 @@ bool OverlayEditor::hitboxSquare(double x1, double y1, double w1, double h1, dou
 
 bool OverlayEditor::touchedSelectedObject(double x, double y){
    for(int index = 0; index < selectedObjects.size(); index++)
-      if(objects[index].l == currentLayer && hitboxDot(selectedObjects[index]->x, selectedObjects[index]->y, selectedObjects[index]->w, selectedObjects[index]->h, x, y))
+      if(objects[index].layer == currentLayer && hitboxDot(selectedObjects[index]->x, selectedObjects[index]->y, selectedObjects[index]->width, selectedObjects[index]->height, x, y))
          return true;
    return false;
 }
@@ -57,13 +57,13 @@ void OverlayEditor::updateSelectedObjects(double x, double y, double w, double h
    selectedObjects.clear();
    if(area){
       for(int index = 0; index < objects.size(); index++)
-         if(objects[index].l == currentLayer && hitboxSquare(x, y, w, h, objects[index].x, objects[index].y, objects[index].w, objects[index].h))
+         if(objects[index].layer == currentLayer && hitboxSquare(x, y, w, h, objects[index].x, objects[index].y, objects[index].width, objects[index].height))
             selectedObjects += &objects[index];
    }
    else{
       //single click, only select one object
       for(int index = 0; index < objects.size(); index++){
-         if(objects[index].l == currentLayer && hitboxDot(objects[index].x, objects[index].y, objects[index].w, objects[index].h, x, y)){
+         if(objects[index].layer == currentLayer && hitboxDot(objects[index].x, objects[index].y, objects[index].width, objects[index].height, x, y)){
             selectedObjects += &objects[index];
             break;
          }
@@ -101,8 +101,8 @@ void OverlayEditor::render(){
 
    //draw all objects
    for(int index = 0; index < objects.size(); index++)
-      if(objects[index].l == currentLayer)
-         renderer->drawPixmap(QRect(objects[index].x * (framebuffer->width() - 1), objects[index].y * (framebuffer->height() - 1), objects[index].w * framebuffer->width(), objects[index].h * framebuffer->height()), objects[index].p, QRect(0, 0, objects[index].p.width(), objects[index].p.height()));
+      if(objects[index].layer == currentLayer)
+         renderer->drawPixmap(QRect(objects[index].x * (framebuffer->width() - 1), objects[index].y * (framebuffer->height() - 1), objects[index].width * framebuffer->width(), objects[index].height * framebuffer->height()), objects[index].picture, QRect(0, 0, objects[index].picture.width(), objects[index].picture.height()));
 
    renderer->setOpacity(0.5);
    if(selectedObjects.empty()){
@@ -117,9 +117,9 @@ void OverlayEditor::render(){
       renderer->setBrush(QColor("Green"));
       for(int index = 0; index < selectedObjects.size(); index++){
          if(selectedObjects[index]->r)
-            renderer->drawEllipse(QRect(selectedObjects[index]->x * (framebuffer->width() - 1), selectedObjects[index]->y * (framebuffer->height() - 1), selectedObjects[index]->w * framebuffer->width(), selectedObjects[index]->h * framebuffer->height()));
+            renderer->drawEllipse(QRect(selectedObjects[index]->x * (framebuffer->width() - 1), selectedObjects[index]->y * (framebuffer->height() - 1), selectedObjects[index]->width * framebuffer->width(), selectedObjects[index]->height * framebuffer->height()));
          else
-            renderer->drawRect(QRect(selectedObjects[index]->x * (framebuffer->width() - 1), selectedObjects[index]->y * (framebuffer->height() - 1), selectedObjects[index]->w * framebuffer->width(), selectedObjects[index]->h * framebuffer->height()));
+            renderer->drawRect(QRect(selectedObjects[index]->x * (framebuffer->width() - 1), selectedObjects[index]->y * (framebuffer->height() - 1), selectedObjects[index]->width * framebuffer->width(), selectedObjects[index]->height * framebuffer->height()));
       }
    }
 }
@@ -167,13 +167,13 @@ void OverlayEditor::saveToFile(const QString& path){
       int layerButtons = 0;
 
       for(int object = 0; object < objects.size(); object++){
-         if(objects[object].l == currentOverlay){
+         if(objects[object].layer == currentOverlay){
             QString item = curOverlayStr + "_desc" + QString::number(object);
-            QString value = objects[object].b + "," + QString::number(objects[object].x + objects[object].w / 2.0) + "," + QString::number(objects[object].y + objects[object].h / 2.0) + "," + (objects[object].r ? "radial" : "rect") + "," + QString::number(objects[object].w / 2.0) + "," + QString::number(objects[object].h / 2.0);
+            QString value = objects[object].name + "," + QString::number(objects[object].x + objects[object].width / 2.0) + "," + QString::number(objects[object].y + objects[object].height / 2.0) + "," + (objects[object].r ? "radial" : "rect") + "," + QString::number(objects[object].width / 2.0) + "," + QString::number(objects[object].height / 2.0);
 
             config_set_string(fileInput, item.toStdString().c_str(), value.toStdString().c_str());
-            if(objects[object].in != "")
-               config_set_string(fileInput, (item + "_overlay").toStdString().c_str(), objects[object].in.toStdString().c_str());
+            if(objects[object].imageName != "")
+               config_set_string(fileInput, (item + "_overlay").toStdString().c_str(), objects[object].imageName.toStdString().c_str());
 
             layerButtons++;
          }
@@ -239,22 +239,22 @@ void OverlayEditor::loadFromFile(const QString& path){
 
          arrayItems = QString(overlayString).split(",");
 
-         newObject.t = isJoystick ? OBJECT_JOYSTICK : OBJECT_BUTTON;
-         newObject.b = arrayItems[0];
+         newObject.type = isJoystick ? OBJECT_JOYSTICK : OBJECT_BUTTON;
+         newObject.name = arrayItems[0];
          newObject.x = arrayItems[1].toDouble();
          newObject.y = arrayItems[2].toDouble();
          newObject.r = arrayItems[3] == "radial";
-         newObject.w = arrayItems[4].toDouble();
-         newObject.h = arrayItems[5].toDouble();
-         newObject.in = imageName;
-         newObject.p = imageName != "" ? QPixmap(QFileInfo(path).path() + "/" + newObject.in) : colorAsImage(isJoystick ? NULL_JOYSTICK_COLOR : NULL_BUTTON_COLOR);
-         newObject.l = currentOverlay;
+         newObject.width = arrayItems[4].toDouble();
+         newObject.height = arrayItems[5].toDouble();
+         newObject.imageName = imageName;
+         newObject.picture = imageName != "" ? QPixmap(QFileInfo(path).path() + "/" + newObject.imageName) : colorAsImage(isJoystick ? NULL_JOYSTICK_COLOR : NULL_BUTTON_COLOR);
+         newObject.layer = currentOverlay;
 
          //recalculate size to top left corner instead of radius from center
-         newObject.x -= newObject.w;
-         newObject.y -= newObject.h;
-         newObject.w *= 2.0;
-         newObject.h *= 2.0;
+         newObject.x -= newObject.width;
+         newObject.y -= newObject.height;
+         newObject.width *= 2.0;
+         newObject.height *= 2.0;
 
          //free duplicated string
          free(imageNamePtr);
@@ -298,12 +298,12 @@ void OverlayEditor::removeLayer(int layer){
 
       //destroy layers objects and shift all other layers down 1
       for(int index = 0; index < objects.size(); index++){
-         if(objects[index].l == layer){
+         if(objects[index].layer == layer){
             objects.remove(index);
             index--;//account for removed index
          }
-         else if(objects[index].l > layer){
-            objects[index].l--;
+         else if(objects[index].layer > layer){
+            objects[index].layer--;
          }
       }
 
@@ -364,65 +364,68 @@ void OverlayEditor::mouseUp(){
    render();
 }
 
-void OverlayEditor::addButton(const QString& buttonName, const QString& imagePath){
-   QPixmap buttonImage(imagePath);
+void OverlayEditor::addButton(){
+   overlay_object newObject;
 
-   if(buttonImage.isNull())
-      buttonImage = colorAsImage(NULL_BUTTON_COLOR);
+   newObject.type = OBJECT_BUTTON;
+   newObject.x = 0.5 - 0.05;
+   newObject.y = 0.5 - 0.05;
+   newObject.width = 0.1;
+   newObject.height = 0.1;
+   newObject.layer = currentLayer;
+   newObject.name = "";
+   newObject.imageName = "";
+   newObject.picture = colorAsImage(NULL_BUTTON_COLOR);
 
-   if(!buttonName.isEmpty()){
-      overlay_object newObject;
+   objects += newObject;
 
-      newObject.t = OBJECT_BUTTON;
-      newObject.x = 0.5 - 0.05;
-      newObject.y = 0.5 - 0.05;
-      newObject.w = 0.1;
-      newObject.h = 0.1;
-      newObject.l = currentLayer;
-      newObject.b = buttonName;
-      newObject.in = buttonImage.isNull() ? "" : QFileInfo(imagePath).fileName();
-      newObject.p = buttonImage;
-
-      objects += newObject;
-
-      render();
-   }
+   render();
 }
 
-void OverlayEditor::addJoystick(const QString& joystickName, const QString& imagePath){
-   QPixmap joystickImage(imagePath);
+void OverlayEditor::addJoystick(){
+   overlay_object newObject;
 
-   if(joystickImage.isNull())
-      joystickImage = colorAsImage(NULL_JOYSTICK_COLOR);
+   newObject.type = OBJECT_JOYSTICK;
+   newObject.x = 0.5 - 0.05;
+   newObject.y = 0.5 - 0.05;
+   newObject.width = 0.1;
+   newObject.height = 0.1;
+   newObject.layer = currentLayer;
+   newObject.name = "";
+   newObject.imageName = "";
+   newObject.picture = colorAsImage(NULL_JOYSTICK_COLOR);
 
-   if(!joystickName.isEmpty()){
-      overlay_object newObject;
+   objects += newObject;
 
-      newObject.t = OBJECT_JOYSTICK;
-      newObject.x = 0.5 - 0.05;
-      newObject.y = 0.5 - 0.05;
-      newObject.w = 0.1;
-      newObject.h = 0.1;
-      newObject.l = currentLayer;
-      newObject.b = joystickName;
-      newObject.in = joystickImage.isNull() ? "" : QFileInfo(imagePath).fileName();
-      newObject.p = joystickImage;
+   render();
+}
 
-      objects += newObject;
+void OverlayEditor::setObjectName(const QString& name){
+   if(selectedObjects.size() == 1)
+      selectedObjects[0]->name = name;
+}
 
-      render();
+void OverlayEditor::setObjectImage(const QString& imagePath){
+   if(selectedObjects.size() == 1){
+      QPixmap image(imagePath);
+
+      if(!image.isNull()){
+         selectedObjects[0]->imageName = QFileInfo(imagePath).fileName();
+         selectedObjects[0]->picture = image;
+         render();
+      }
    }
 }
 
 void OverlayEditor::remove(){
    //mark deleted objects
    for(int index = 0; index < selectedObjects.size(); index++)
-      selectedObjects[index]->b = "";
+      selectedObjects[index]->name = "";
    selectedObjects.clear();
 
    //destroy empty objects
    for(int index = 0; index < objects.size(); index++)
-      while(index < objects.size() && objects[index].b.isEmpty())
+      while(index < objects.size() && objects[index].name.isEmpty())
          objects.remove(index);
 
    render();
@@ -430,12 +433,12 @@ void OverlayEditor::remove(){
 
 void OverlayEditor::resize(double w, double h){
    for(int index = 0; index < selectedObjects.size(); index++){
-      selectedObjects[index]->x += selectedObjects[index]->w / 2;
-      selectedObjects[index]->y += selectedObjects[index]->h / 2;
-      selectedObjects[index]->w *= w;
-      selectedObjects[index]->h *= h;
-      selectedObjects[index]->x -= selectedObjects[index]->w / 2;
-      selectedObjects[index]->y -= selectedObjects[index]->h / 2;
+      selectedObjects[index]->x += selectedObjects[index]->width / 2;
+      selectedObjects[index]->y += selectedObjects[index]->height / 2;
+      selectedObjects[index]->width *= w;
+      selectedObjects[index]->height *= h;
+      selectedObjects[index]->x -= selectedObjects[index]->width / 2;
+      selectedObjects[index]->y -= selectedObjects[index]->height / 2;
    }
 
    render();
@@ -447,15 +450,15 @@ void OverlayEditor::resizeGroupSpacing(double w, double h){
       double groupCenterY = 0.0;
 
       for(int index = 0; index < selectedObjects.size(); index++){
-         groupCenterX += selectedObjects[index]->x + selectedObjects[index]->w / 2;
-         groupCenterY += selectedObjects[index]->y + selectedObjects[index]->h / 2;
+         groupCenterX += selectedObjects[index]->x + selectedObjects[index]->width / 2;
+         groupCenterY += selectedObjects[index]->y + selectedObjects[index]->height / 2;
       }
       groupCenterX /= selectedObjects.size();
       groupCenterY /= selectedObjects.size();
 
       for(int index = 0; index < selectedObjects.size(); index++){
-         double distanceFromGroupCenterX = selectedObjects[index]->x + selectedObjects[index]->w / 2 - groupCenterX;
-         double distanceFromGroupCenterY = selectedObjects[index]->y + selectedObjects[index]->h / 2 - groupCenterY;
+         double distanceFromGroupCenterX = selectedObjects[index]->x + selectedObjects[index]->width / 2 - groupCenterX;
+         double distanceFromGroupCenterY = selectedObjects[index]->y + selectedObjects[index]->height / 2 - groupCenterY;
 
          selectedObjects[index]->x += distanceFromGroupCenterX * (w - 1.0);
          selectedObjects[index]->y += distanceFromGroupCenterY * (h - 1.0);

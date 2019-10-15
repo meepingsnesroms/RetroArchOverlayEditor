@@ -7,9 +7,9 @@
 #include <QPainter>
 #include <QColor>
 
-#define NULL_BUTTON_COLOR QColor(0x00, 0x77, 0x00, 0x77)
-#define NULL_JOYSTICK_COLOR QColor(0x00, 0x00, 0x77, 0x77)
-#define OBJECT_RESIZE_ACTION_COLOR QColor(0x77, 0x77, 0x00, 0x77)
+#define NULL_BUTTON_COLOR QColor(0xFF, 0x00, 0x00, 0x77)
+#define NULL_JOYSTICK_COLOR QColor(0x00, 0x00, 0xFF, 0x77)
+#define OBJECT_RESIZE_ACTION_COLOR QColor(0xFF, 0xFF, 0x00, 0x77)
 
 enum{
    OBJECT_SYSTEM_OBJECT_RESIZE_ACTION = 0,
@@ -18,16 +18,16 @@ enum{
 };
 
 typedef struct{
-   uint8_t t;//type
+   uint8_t type;//type
    double  x;
    double  y;
-   double  w;
-   double  h;
+   double  width;
+   double  height;
    bool    r;//radial
-   int     l;//layer, -1 for system objects
-   QString b;//button
-   QString in;//image name
-   QPixmap p;//pixmap
+   int     layer;//layer, -1 for system objects
+   QString name;//button
+   QString imageName;//image name
+   QPixmap picture;//pixmap
 }overlay_object;
 
 typedef struct{
@@ -82,8 +82,9 @@ public:
    void newLayer();
    void removeLayer(int layer);
 
-   //GUI info funcs
+   //GUI readback funcs
    bool singleObjectSelected(){return selectedObjects.size() == 1;}
+   QString getObjectName(){return selectedObjects.size() == 1 ? selectedObjects[0]->name : "";}
 
    //I/O
    const QPixmap& getImage(){return *framebuffer;}
@@ -92,8 +93,10 @@ public:
    void mouseUp();
 
    //button configuration
-   void addButton(const QString& buttonName, const QString& imagePath);
-   void addJoystick(const QString& joystickName, const QString& imagePath);
+   void addButton();
+   void addJoystick();
+   void setObjectName(const QString& name);
+   void setObjectImage(const QString& imagePath);
    void remove();
    void resize(double w, double h);//multiplier, 1.0 = stay the same
    void resizeGroupSpacing(double w, double h);//multiplier, 1.0 = stay the same

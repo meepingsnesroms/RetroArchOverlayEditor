@@ -24,6 +24,7 @@ private:
    void redraw();
 
 private slots:
+   bool eventFilter(QObject* object, QEvent* event);
    void updateDisplay();
 
    //file menu
@@ -37,18 +38,36 @@ private slots:
    void addButton();
    void addJoystick();
    void deleteObjects();
+   void setObjectName();
+   void setObjectImage();
    void setCircularObjects();
    void setSquareObjects();
    void setObjectsCoordinates();
    void alignObjectWithBorderPixels();
    void advancedEdit();
 
-   //TODO: about menu
+   //about menu
+   void about();
+
+   void on_sizeSlider_sliderMoved(int position);
+
+   void on_sizeSlider_sliderReleased();
+
+   void on_widthSlider_sliderMoved(int position);
+
+   void on_widthSlider_sliderReleased();
+
+   void on_heightSlider_sliderMoved(int position);
+
+   void on_heightSlider_sliderReleased();
 
 private:
-   Ui::MainWindow*   ui;
-   QString           currentOpenFile;
-   QTimer*           refreshDisplay;
+   Ui::MainWindow* ui;
+   QString         currentOpenFile;
+   int             sizeSliderLastPostion;
+   int             widthSliderLastPostion;
+   int             heightSliderLastPostion;
+   QTimer*         refreshDisplay;
 };
 
 #endif

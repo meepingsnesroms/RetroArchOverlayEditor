@@ -28,7 +28,7 @@ OverlayFunctions::~OverlayFunctions(){
 }
 
 void OverlayFunctions::on_addButton_clicked(){
-   ((MainWindow*)parentWidget())->editor->addButton(ui->buttonName->text(), ui->imagePath->text());
+   //((MainWindow*)parentWidget())->editor->addButton(ui->buttonName->text(), ui->imagePath->text());
 }
 
 void OverlayFunctions::on_deleteButton_clicked(){
