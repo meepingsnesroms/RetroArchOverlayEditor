@@ -26,11 +26,10 @@ OverlayEditor::~OverlayEditor(){
    delete framebuffer;
 }
 
-QPixmap OverlayEditor::nullImage(){
+QPixmap OverlayEditor::colorAsImage(QColor color){
    QPixmap image(1, 1);
 
-   //transparent green screen color
-   image.fill(QColor(0x00, 0xFF, 0x00, 0x77));
+   image.fill(color);
 
    return image;
 }
@@ -48,20 +47,18 @@ bool OverlayEditor::hitboxSquare(double x1, double y1, double w1, double h1, dou
 }
 
 bool OverlayEditor::touchedSelectedObject(double x, double y){
-   for(int index = 0; index < selectedObjects.size(); index++){
+   for(int index = 0; index < selectedObjects.size(); index++)
       if(objects[index].l == currentLayer && hitboxDot(selectedObjects[index]->x, selectedObjects[index]->y, selectedObjects[index]->w, selectedObjects[index]->h, x, y))
          return true;
-   }
    return false;
 }
 
 void OverlayEditor::updateSelectedObjects(double x, double y, double w, double h, bool area){
    selectedObjects.clear();
    if(area){
-      for(int index = 0; index < objects.size(); index++){
+      for(int index = 0; index < objects.size(); index++)
          if(objects[index].l == currentLayer && hitboxSquare(x, y, w, h, objects[index].x, objects[index].y, objects[index].w, objects[index].h))
             selectedObjects += &objects[index];
-      }
    }
    else{
       //single click, only select one object
@@ -96,19 +93,16 @@ void OverlayEditor::render(){
    //draw grid
    if(gridSize > 0.0){
       renderer->setPen(QPen(gridColor, (double)framebuffer->width() / 1000.0));
-      for(double hLine = 0.0; hLine <= 1.0; hLine += gridSize){
+      for(double hLine = 0.0; hLine <= 1.0; hLine += gridSize)
          renderer->drawLine(QLine(0, hLine * (framebuffer->height() - 1), framebuffer->width() - 1, hLine * (framebuffer->height() - 1)));
-      }
-      for(double vLine = 0.0; vLine <= 1.0; vLine += gridSize){
+      for(double vLine = 0.0; vLine <= 1.0; vLine += gridSize)
          renderer->drawLine(QLine(vLine * (framebuffer->width() - 1), 0, vLine * (framebuffer->width() - 1), framebuffer->height() - 1));
-      }
    }
 
    //draw all objects
-   for(int index = 0; index < objects.size(); index++){
+   for(int index = 0; index < objects.size(); index++)
       if(objects[index].l == currentLayer)
          renderer->drawPixmap(QRect(objects[index].x * (framebuffer->width() - 1), objects[index].y * (framebuffer->height() - 1), objects[index].w * framebuffer->width(), objects[index].h * framebuffer->height()), objects[index].p, QRect(0, 0, objects[index].p.width(), objects[index].p.height()));
-   }
 
    renderer->setOpacity(0.5);
    if(selectedObjects.empty()){
@@ -172,14 +166,14 @@ void OverlayEditor::saveToFile(const QString& path){
       QString curOverlayStr = "overlay" + QString::number(currentOverlay);
       int layerButtons = 0;
 
-      for(int button = 0; button < objects.size(); button++){
-         if(objects[button].l == currentOverlay){
-            QString item = curOverlayStr + "_desc" + QString::number(button);
-            QString value = objects[button].b + "," + QString::number(objects[button].x + objects[button].w / 2.0) + "," + QString::number(objects[button].y + objects[button].h / 2.0) + "," + (objects[button].r ? "radial" : "rect") + "," + QString::number(objects[button].w / 2.0) + "," + QString::number(objects[button].h / 2.0);
+      for(int object = 0; object < objects.size(); object++){
+         if(objects[object].l == currentOverlay){
+            QString item = curOverlayStr + "_desc" + QString::number(object);
+            QString value = objects[object].b + "," + QString::number(objects[object].x + objects[object].w / 2.0) + "," + QString::number(objects[object].y + objects[object].h / 2.0) + "," + (objects[object].r ? "radial" : "rect") + "," + QString::number(objects[object].w / 2.0) + "," + QString::number(objects[object].h / 2.0);
 
             config_set_string(fileInput, item.toStdString().c_str(), value.toStdString().c_str());
-            if(objects[button].in != "")
-               config_set_string(fileInput, (item + "_overlay").toStdString().c_str(), objects[button].in.toStdString().c_str());
+            if(objects[object].in != "")
+               config_set_string(fileInput, (item + "_overlay").toStdString().c_str(), objects[object].in.toStdString().c_str());
 
             layerButtons++;
          }
@@ -221,14 +215,15 @@ void OverlayEditor::loadFromFile(const QString& path){
 
       config_get_int(fileInput, (curOverlayStr + "_descs").toStdString().c_str(), &totalButtons);
 
-      for(int button = 0; button < totalButtons; button++){
+      for(int object = 0; object < totalButtons; object++){
          overlay_object newObject;
-         QString item = curOverlayStr + "_desc" + QString::number(button);
+         QString item = curOverlayStr + "_desc" + QString::number(object);
          char overlayString[256];
          bool success = config_get_array(fileInput, item.toStdString().c_str(), overlayString, sizeof(overlayString));
          QStringList arrayItems;
          char* imageNamePtr;
-         QString imageName;
+         QString imageName;//TODO: weird SIGSEGV here
+         bool isJoystick = false;
 
          //no more entrys
          if(!success)
@@ -237,10 +232,14 @@ void OverlayEditor::loadFromFile(const QString& path){
          //get image name
          config_get_string(fileInput, (item + "_overlay").toStdString().c_str(), &imageNamePtr);
 
+         //get object type
+         config_get_bool(fileInput, (item + "_movable").toStdString().c_str(), &isJoystick);
+
          imageName = imageNamePtr;
 
          arrayItems = QString(overlayString).split(",");
 
+         newObject.t = isJoystick ? OBJECT_JOYSTICK : OBJECT_BUTTON;
          newObject.b = arrayItems[0];
          newObject.x = arrayItems[1].toDouble();
          newObject.y = arrayItems[2].toDouble();
@@ -248,7 +247,7 @@ void OverlayEditor::loadFromFile(const QString& path){
          newObject.w = arrayItems[4].toDouble();
          newObject.h = arrayItems[5].toDouble();
          newObject.in = imageName;
-         newObject.p = imageName != "" ? QPixmap(QFileInfo(path).path() + "/" + newObject.in) : nullImage();
+         newObject.p = imageName != "" ? QPixmap(QFileInfo(path).path() + "/" + newObject.in) : colorAsImage(isJoystick ? NULL_JOYSTICK_COLOR : NULL_BUTTON_COLOR);
          newObject.l = currentOverlay;
 
          //recalculate size to top left corner instead of radius from center
@@ -365,15 +364,16 @@ void OverlayEditor::mouseUp(){
    render();
 }
 
-void OverlayEditor::add(const QString& buttonName, const QString& imagePath){
+void OverlayEditor::addButton(const QString& buttonName, const QString& imagePath){
    QPixmap buttonImage(imagePath);
 
    if(buttonImage.isNull())
-      buttonImage = nullImage();
+      buttonImage = colorAsImage(NULL_BUTTON_COLOR);
 
    if(!buttonName.isEmpty()){
       overlay_object newObject;
 
+      newObject.t = OBJECT_BUTTON;
       newObject.x = 0.5 - 0.05;
       newObject.y = 0.5 - 0.05;
       newObject.w = 0.1;
@@ -382,6 +382,31 @@ void OverlayEditor::add(const QString& buttonName, const QString& imagePath){
       newObject.b = buttonName;
       newObject.in = buttonImage.isNull() ? "" : QFileInfo(imagePath).fileName();
       newObject.p = buttonImage;
+
+      objects += newObject;
+
+      render();
+   }
+}
+
+void OverlayEditor::addJoystick(const QString& joystickName, const QString& imagePath){
+   QPixmap joystickImage(imagePath);
+
+   if(joystickImage.isNull())
+      joystickImage = colorAsImage(NULL_JOYSTICK_COLOR);
+
+   if(!joystickName.isEmpty()){
+      overlay_object newObject;
+
+      newObject.t = OBJECT_JOYSTICK;
+      newObject.x = 0.5 - 0.05;
+      newObject.y = 0.5 - 0.05;
+      newObject.w = 0.1;
+      newObject.h = 0.1;
+      newObject.l = currentLayer;
+      newObject.b = joystickName;
+      newObject.in = joystickImage.isNull() ? "" : QFileInfo(imagePath).fileName();
+      newObject.p = joystickImage;
 
       objects += newObject;
 

@@ -7,13 +7,24 @@
 #include <QPainter>
 #include <QColor>
 
+#define NULL_BUTTON_COLOR QColor(0x00, 0x77, 0x00, 0x77)
+#define NULL_JOYSTICK_COLOR QColor(0x00, 0x00, 0x77, 0x77)
+#define OBJECT_RESIZE_ACTION_COLOR QColor(0x77, 0x77, 0x00, 0x77)
+
+enum{
+   OBJECT_SYSTEM_OBJECT_RESIZE_ACTION = 0,
+   OBJECT_BUTTON,
+   OBJECT_JOYSTICK
+};
+
 typedef struct{
+   uint8_t t;//type
    double  x;
    double  y;
    double  w;
    double  h;
    bool    r;//radial
-   int     l;//layer
+   int     l;//layer, -1 for system objects
    QString b;//button
    QString in;//image name
    QPixmap p;//pixmap
@@ -25,7 +36,6 @@ typedef struct{
    double rangeMod;
    double alphaMod;
 }overlay;
-
 
 class OverlayEditor{
 private:
@@ -46,7 +56,7 @@ private:
    double                   mouseLastX;
    double                   mouseLastY;
 
-   QPixmap nullImage();
+   QPixmap colorAsImage(QColor color);
    bool hitboxDot(double x1, double y1, double w1, double h1, double x2, double y2);
    bool hitboxSquare(double x1, double y1, double w1, double h1, double x2, double y2, double w2, double h2);
    bool touchedSelectedObject(double x, double y);
@@ -72,6 +82,9 @@ public:
    void newLayer();
    void removeLayer(int layer);
 
+   //GUI info funcs
+   bool singleObjectSelected(){return selectedObjects.size() == 1;}
+
    //I/O
    const QPixmap& getImage(){return *framebuffer;}
    void mouseDown(double x, double y);
@@ -79,7 +92,8 @@ public:
    void mouseUp();
 
    //button configuration
-   void add(const QString& buttonName, const QString& imagePath);
+   void addButton(const QString& buttonName, const QString& imagePath);
+   void addJoystick(const QString& joystickName, const QString& imagePath);
    void remove();
    void resize(double w, double h);//multiplier, 1.0 = stay the same
    void resizeGroupSpacing(double w, double h);//multiplier, 1.0 = stay the same

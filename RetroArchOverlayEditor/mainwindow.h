@@ -20,13 +20,26 @@ public:
    explicit MainWindow(QWidget* parent = nullptr);
    ~MainWindow();
 
+private:
+   void redraw();
+
 private slots:
    void updateDisplay();
 
+   //file menu
+   void new_DERESERVED();
+   void open();
+   void save();
+   void saveAs();
+
+   //TODO: action menu
+
+   //TODO: about menu
+
 private:
-   Ui::MainWindow* ui;
-   OverlayFunctions* tools;
-   QTimer* refreshDisplay;
+   Ui::MainWindow*   ui;
+   QString           currentOpenFile;
+   QTimer*           refreshDisplay;
 };
 
 #endif
