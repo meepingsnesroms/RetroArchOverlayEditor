@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>358</width>
-    <height>387</height>
+    <width>363</width>
+    <height>391</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -66,6 +66,9 @@
      <layout class="QHBoxLayout" name="horizontalLayout_2">
       <item>
        <layout class="QVBoxLayout" name="verticalLayout_3">
+        <property name="spacing">
+         <number>0</number>
+        </property>
         <item>
          <widget class="QLabel" name="label_2">
           <property name="text">
@@ -91,6 +94,9 @@
       </item>
       <item>
        <layout class="QVBoxLayout" name="verticalLayout_2">
+        <property name="spacing">
+         <number>0</number>
+        </property>
         <item>
          <widget class="QSlider" name="sizeSlider">
           <property name="maximum">
@@ -141,7 +147,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>358</width>
+     <width>363</width>
      <height>21</height>
     </rect>
    </property>

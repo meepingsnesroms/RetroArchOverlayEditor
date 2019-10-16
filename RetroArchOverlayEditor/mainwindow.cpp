@@ -108,7 +108,7 @@ MainWindow::MainWindow(QWidget* parent) :
    ui->menuAbout->addAction(aboutAction);
 
    connect(refreshDisplay, SIGNAL(timeout()), this, SLOT(updateDisplay()));
-   refreshDisplay->start(1000 / 15);//15 FPS
+   refreshDisplay->start(1000 / 30);//30 FPS
 
    redraw();
 }
@@ -129,15 +129,14 @@ void MainWindow::redraw(){
    }
 }
 
-
 bool MainWindow::eventFilter(QObject* object, QEvent* event){
    if(event->type() == QEvent::Resize && object->objectName() == "centralWidget"){
       float wR = 1.0;
       float hR = (float)editor->getImage().height() / (float)editor->getImage().width();
       float smallestRatio;
 
-      //update displayContainer first, make the display occupy the top 3/5 of the screen if there are Palm keys or 4/5 if theres not
-      ui->displayContainer->setFixedHeight(ui->centralWidget->height() * 0.80);
+      //force how much of the window the screen occupies
+      ui->displayContainer->setFixedHeight(ui->centralWidget->height() * 0.70);
 
       smallestRatio = qMin(ui->displayContainer->size().width() * 0.98 / wR, ui->displayContainer->size().height() * 0.98 / hR);
       //the 0.98 above allows the display to shrink, without it the displayContainer couldnt shrink because of the fixed size of the display
@@ -238,25 +237,70 @@ void MainWindow::about(){
 }
 
 void MainWindow::on_sizeSlider_sliderMoved(int position){
+   double multiplier = (float)(position - sizeSliderLastPostion) / 50.0 + 1.0;
 
+   if(editor->singleObjectSelected())
+      editor->resize(multiplier, multiplier);
+   else
+      editor->resizeGroupSpacing(multiplier, multiplier);
+   sizeSliderLastPostion = position;
+}
+
+void MainWindow::on_sizeSlider_valueChanged(int value){
+   //have to handle this contition to support keyboard events
+    if(value != sizeSliderLastPostion){
+       double multiplier = (float)(value - sizeSliderLastPostion) / 50.0 + 1.0;
+
+       if(editor->singleObjectSelected())
+          editor->resize(multiplier, multiplier);
+       else
+          editor->resizeGroupSpacing(multiplier, multiplier);
+       ui->sizeSlider->setValue(50);
+       sizeSliderLastPostion = 50;
+    }
 }
 
 void MainWindow::on_sizeSlider_sliderReleased(){
    sizeSliderLastPostion = 50;
+   ui->sizeSlider->setValue(50);
 }
 
 void MainWindow::on_widthSlider_sliderMoved(int position){
+   if(editor->singleObjectSelected())
+      editor->resize((float)(position - widthSliderLastPostion) / 50.0 + 1.0, 1.0);
+   widthSliderLastPostion = position;
+}
 
+void MainWindow::on_widthSlider_valueChanged(int value){
+   if(value != widthSliderLastPostion){
+      if(editor->singleObjectSelected())
+         editor->resize((float)(value - widthSliderLastPostion) / 50.0 + 1.0, 1.0);
+      ui->widthSlider->setValue(50);
+      widthSliderLastPostion = 50;
+   }
 }
 
 void MainWindow::on_widthSlider_sliderReleased(){
    widthSliderLastPostion = 50;
+   ui->widthSlider->setValue(50);
 }
 
 void MainWindow::on_heightSlider_sliderMoved(int position){
+   if(editor->singleObjectSelected())
+      editor->resize(1.0, (float)(position - heightSliderLastPostion) / 50.0 + 1.0);
+   heightSliderLastPostion = position;
+}
 
+void MainWindow::on_heightSlider_valueChanged(int value){
+   if(value != heightSliderLastPostion){
+      if(editor->singleObjectSelected())
+            editor->resize(1.0, (float)(value - heightSliderLastPostion) / 50.0 + 1.0);
+      ui->heightSlider->setValue(50);
+      heightSliderLastPostion = 50;
+   }
 }
 
 void MainWindow::on_heightSlider_sliderReleased(){
    heightSliderLastPostion = 50;
+   ui->heightSlider->setValue(50);
 }

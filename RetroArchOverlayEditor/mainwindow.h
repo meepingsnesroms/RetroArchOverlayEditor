@@ -50,15 +50,13 @@ private slots:
    void about();
 
    void on_sizeSlider_sliderMoved(int position);
-
+   void on_sizeSlider_valueChanged(int value);
    void on_sizeSlider_sliderReleased();
-
    void on_widthSlider_sliderMoved(int position);
-
+   void on_widthSlider_valueChanged(int value);
    void on_widthSlider_sliderReleased();
-
    void on_heightSlider_sliderMoved(int position);
-
+   void on_heightSlider_valueChanged(int value);
    void on_heightSlider_sliderReleased();
 
 private:

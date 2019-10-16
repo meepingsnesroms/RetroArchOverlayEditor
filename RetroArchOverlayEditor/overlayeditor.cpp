@@ -221,7 +221,7 @@ void OverlayEditor::loadFromFile(const QString& path){
          char overlayString[256];
          bool success = config_get_array(fileInput, item.toStdString().c_str(), overlayString, sizeof(overlayString));
          QStringList arrayItems;
-         char* imageNamePtr;
+         char* imageNamePtr = "";
          QString imageName;//TODO: weird SIGSEGV here
          bool isJoystick = false;
 

@@ -30,7 +30,6 @@ SOURCES += \
     mainwindow.cpp \
     overlaydisplay.cpp \
     overlayeditor.cpp \
-    overlayfunctions.cpp \
     libretro-common/compat/compat_posix_string.c \
     libretro-common/compat/compat_strcasestr.c \
     libretro-common/compat/compat_strl.c \
@@ -66,12 +65,10 @@ HEADERS += \
     libretro-common/include/retro_miscellaneous.h \
     mainwindow.h \
     overlaydisplay.h \
-    overlayeditor.h \
-    overlayfunctions.h
+    overlayeditor.h
 
 FORMS += \
-    mainwindow.ui \
-    overlayfunctions.ui
+    mainwindow.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
