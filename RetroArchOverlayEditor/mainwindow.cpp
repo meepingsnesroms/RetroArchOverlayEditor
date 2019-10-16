@@ -2,8 +2,8 @@
 #include "ui_mainwindow.h"
 
 #include "overlayeditor.h"
-#include "overlayfunctions.h"
 
+#include <QInputDialog>
 #include <QFileDialog>
 
 
@@ -202,7 +202,13 @@ void MainWindow::deleteObjects(){
 }
 
 void MainWindow::setObjectName(){
+   if(editor->singleObjectSelected()){
+      bool ok;
+      QString name = QInputDialog::getText(this, "Object Name", "Object Name:", QLineEdit::Normal, "", &ok);
 
+      if(ok)
+         editor->setObjectName(name);
+   }
 }
 
 void MainWindow::setObjectImage(){
@@ -221,7 +227,15 @@ void MainWindow::setSquareObjects(){
 }
 
 void MainWindow::setObjectsCoordinates(){
+   bool ok;
+   QString coordinates = QInputDialog::getText(this, "Object(s) Coordinates", "Object(s) Coordinates:", QLineEdit::Normal, "0.5, 0.5", &ok);
 
+   if(ok){
+      QStringList coordinates2 = coordinates.split(",");
+
+      if(coordinates2.size() == 2)
+         editor->setObjectsCoordinates(coordinates2[0].toDouble(), coordinates2[1].toDouble());
+   }
 }
 
 void MainWindow::alignObjectWithBorderPixels(){

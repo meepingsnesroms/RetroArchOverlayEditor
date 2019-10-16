@@ -71,6 +71,28 @@ void OverlayEditor::updateSelectedObjects(double x, double y, double w, double h
    }
 }
 
+double_2 OverlayEditor::getCenterOfSelectedObjects(){
+   if(selectedObjects.size() == 1){
+      return {selectedObjects[0]->x, selectedObjects[0]->y};
+   }
+   else if(selectedObjects.size() > 1){
+      double groupCenterX = 0.0;
+      double groupCenterY = 0.0;
+
+      for(int index = 0; index < selectedObjects.size(); index++){
+         groupCenterX += selectedObjects[index]->x + selectedObjects[index]->width / 2;
+         groupCenterY += selectedObjects[index]->y + selectedObjects[index]->height / 2;
+      }
+      groupCenterX /= selectedObjects.size();
+      groupCenterY /= selectedObjects.size();
+
+      return {groupCenterX, groupCenterY};
+   }
+   else{
+      return {0.5, 0.5};
+   }
+}
+
 void OverlayEditor::moveSelectedObjects(double x, double y){
    for(int index = 0; index < selectedObjects.size(); index++){
       selectedObjects[index]->x += x;
@@ -222,7 +244,7 @@ void OverlayEditor::loadFromFile(const QString& path){
          bool success = config_get_array(fileInput, item.toStdString().c_str(), overlayString, sizeof(overlayString));
          QStringList arrayItems;
          char* imageNamePtr = "";
-         QString imageName;//TODO: weird SIGSEGV here
+         QString imageName;
          bool isJoystick = false;
 
          //no more entrys
@@ -417,6 +439,25 @@ void OverlayEditor::setObjectImage(const QString& imagePath){
    }
 }
 
+void OverlayEditor::setObjectsCoordinates(double x, double y){
+   if(selectedObjects.size() == 1){
+      selectedObjects[0]->x = x - selectedObjects[0]->width / 2.0;
+      selectedObjects[0]->y = y - selectedObjects[0]->height / 2.0;
+      render();
+   }
+   else if(selectedObjects.size() > 1){
+      double_2 groupCenter = getCenterOfSelectedObjects();
+      double groupCenterX = groupCenter.double_0;
+      double groupCenterY = groupCenter.double_1;
+
+      for(int index = 0; index < selectedObjects.size(); index++){
+         selectedObjects[index]->x += x - groupCenterX;
+         selectedObjects[index]->y += y - groupCenterY;
+      }
+      render();
+   }
+}
+
 void OverlayEditor::remove(){
    //mark deleted objects
    for(int index = 0; index < selectedObjects.size(); index++)
@@ -446,15 +487,9 @@ void OverlayEditor::resize(double w, double h){
 
 void OverlayEditor::resizeGroupSpacing(double w, double h){
    if(selectedObjects.size() > 1){
-      double groupCenterX = 0.0;
-      double groupCenterY = 0.0;
-
-      for(int index = 0; index < selectedObjects.size(); index++){
-         groupCenterX += selectedObjects[index]->x + selectedObjects[index]->width / 2;
-         groupCenterY += selectedObjects[index]->y + selectedObjects[index]->height / 2;
-      }
-      groupCenterX /= selectedObjects.size();
-      groupCenterY /= selectedObjects.size();
+      double_2 groupCenter = getCenterOfSelectedObjects();
+      double groupCenterX = groupCenter.double_0;
+      double groupCenterY = groupCenter.double_1;
 
       for(int index = 0; index < selectedObjects.size(); index++){
          double distanceFromGroupCenterX = selectedObjects[index]->x + selectedObjects[index]->width / 2 - groupCenterX;

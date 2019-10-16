@@ -17,6 +17,11 @@ enum{
 };
 
 typedef struct{
+   double double_0;
+   double double_1;
+}double_2;
+
+typedef struct{
    uint8_t type;//type
    double  x;
    double  y;
@@ -60,6 +65,7 @@ private:
    bool hitboxSquare(double x1, double y1, double w1, double h1, double x2, double y2, double w2, double h2);
    bool touchedSelectedObject(double x, double y);
    void updateSelectedObjects(double x, double y, double w, double h, bool area);
+   double_2 getCenterOfSelectedObjects();
    void moveSelectedObjects(double x, double y);//in deltas, not absolute
    void render();
 
@@ -71,7 +77,6 @@ public:
    void reset();
    void saveToFile(const QString& path);
    void loadFromFile(const QString& path);
-   void setOverlayText(const QString& data);
    void setCanvasSize(int w, int h);
    void setBackground(const QString& imagePath);
    void setGrid(double size, QColor color);//-1.0 = disabled
@@ -96,6 +101,7 @@ public:
    void addJoystick();
    void setObjectName(const QString& name);
    void setObjectImage(const QString& imagePath);
+   void setObjectsCoordinates(double x, double y);
    void remove();
    void resize(double w, double h);//multiplier, 1.0 = stay the same
    void resizeGroupSpacing(double w, double h);//multiplier, 1.0 = stay the same

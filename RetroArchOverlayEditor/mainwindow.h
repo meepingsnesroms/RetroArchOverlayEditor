@@ -5,7 +5,6 @@
 #include <QTimer>
 
 #include "overlayeditor.h"
-#include "overlayfunctions.h"
 
 namespace Ui {
 class MainWindow;
