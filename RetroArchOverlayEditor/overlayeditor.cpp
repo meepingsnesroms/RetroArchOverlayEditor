@@ -349,10 +349,18 @@ void OverlayEditor::newLayer(){
 
 void OverlayEditor::removeLayer(int layer){
    //cant delete layer 0
-   if(layer > 0 && layer < totalLayers){
-      //clean up current layer if needed
-      if(layer == currentLayer)
-         setLayer(0);
+   if(totalLayers > 1 && layer < totalLayers){
+      int setNewLayer = -1;
+
+      //maintain current displayed image if possible
+      if(currentLayer > layer)
+         setNewLayer = currentLayer - 1;
+      else if(currentLayer == layer){
+         if(layer == totalLayers - 1)
+            setNewLayer = currentLayer - 1;
+         else
+            setNewLayer = currentLayer;
+      }
 
       //destroy layers objects and shift all other layers down 1
       for(int index = 0; index < objects.size(); index++){
@@ -367,6 +375,11 @@ void OverlayEditor::removeLayer(int layer){
 
       layers.remove(layer);
       totalLayers--;
+
+      if(setNewLayer != -1){
+         setLayer(setNewLayer);
+         render();
+      }
    }
 }
 

@@ -38,6 +38,8 @@ private slots:
    void setBackground();
    void setLayerImage();
    void removeLayerImage();
+   void addLayer();
+   void deleteLayer();
    void addButton();
    void addJoystick();
    void deleteObjects();

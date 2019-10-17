@@ -14,6 +14,9 @@ public:
    explicit About(QWidget* parent = nullptr);
    ~About();
 
+private slots:
+   bool eventFilter(QObject* object, QEvent* event);
+
 private:
    Ui::About* ui;
 };

@@ -68,6 +68,16 @@ MainWindow::MainWindow(QWidget* parent) :
    connect(removeLayerImageAction, &QAction::triggered, this, &MainWindow::removeLayerImage);
    ui->menuActions->addAction(removeLayerImageAction);
 
+   QAction* addLayerAction = new QAction("Add Layer", this);
+   addLayerAction->setStatusTip("Add another layer to the overlay");
+   connect(addLayerAction, &QAction::triggered, this, &MainWindow::addLayer);
+   ui->menuActions->addAction(addLayerAction);
+
+   QAction* deleteLayerAction = new QAction("Delete Layer", this);
+   deleteLayerAction->setStatusTip("Delete the current layer from the overlay");
+   connect(deleteLayerAction, &QAction::triggered, this, &MainWindow::deleteLayer);
+   ui->menuActions->addAction(deleteLayerAction);
+
    QAction* addButtonAction = new QAction("Add Button", this);
    addButtonAction->setStatusTip("Add a button");
    connect(addButtonAction, &QAction::triggered, this, &MainWindow::addButton);
@@ -108,12 +118,12 @@ MainWindow::MainWindow(QWidget* parent) :
    connect(setObjectsCoordinatesAction, &QAction::triggered, this, &MainWindow::setObjectsCoordinates);
    ui->menuActions->addAction(setObjectsCoordinatesAction);
 
-   QAction* alignObjectWithBorderPixelsAction = new QAction("Align Object With Border Pixels (UNIMPL)", this);
+   QAction* alignObjectWithBorderPixelsAction = new QAction("Align Object With Border Pixels (UNIMPLEMENTED)", this);
    alignObjectWithBorderPixelsAction->setStatusTip("Match outer 1 pixel border to of object to background and move object there");
    connect(alignObjectWithBorderPixelsAction, &QAction::triggered, this, &MainWindow::alignObjectWithBorderPixels);
    ui->menuActions->addAction(alignObjectWithBorderPixelsAction);
 
-   QAction* advancedEditAction = new QAction("Advanced Edit (UNIMPL)", this);
+   QAction* advancedEditAction = new QAction("Advanced Edit (UNIMPLEMENTED)", this);
    advancedEditAction->setStatusTip("Directly edit overlay object code");
    connect(advancedEditAction, &QAction::triggered, this, &MainWindow::advancedEdit);
    ui->menuActions->addAction(advancedEditAction);
@@ -143,6 +153,9 @@ void MainWindow::redraw(){
    for(int index = 0; index < editor->getTotalLayers(); index++){
       QAction* layerSelectAction = new QAction(QString::number(index), this);
       layerSelectAction->setProperty("layer_num", index);
+      //layerSelectAction->se
+      layerSelectAction->setCheckable(index == editor->getLayer());
+      layerSelectAction->setChecked(index == editor->getLayer());
       connect(layerSelectAction, &QAction::triggered, this, &MainWindow::layerChange);
       ui->menuLayer->addAction(layerSelectAction);
    }
@@ -243,6 +256,16 @@ void MainWindow::removeLayerImage(){
    editor->setLayerImage("");
 }
 
+void MainWindow::addLayer(){
+   editor->newLayer();
+   redraw();
+}
+
+void MainWindow::deleteLayer(){
+   editor->removeLayer(editor->getLayer());
+   redraw();
+}
+
 void MainWindow::addButton(){
    editor->addButton();
 }
@@ -315,6 +338,7 @@ void MainWindow::layerChange(){
    int layer = sender()->property("layer_num").toInt();
 
    editor->setLayer(layer);
+   redraw();
 }
 
 void MainWindow::about(){
