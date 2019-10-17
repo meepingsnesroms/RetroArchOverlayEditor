@@ -35,10 +35,12 @@ typedef struct{
 }overlay_object;
 
 typedef struct{
-   bool   rangeModExists;
-   bool   alphaModExists;
-   double rangeMod;
-   double alphaMod;
+   bool    rangeModExists;
+   bool    alphaModExists;
+   double  rangeMod;
+   double  alphaMod;
+   QString overlayImagePath;
+   QPixmap overlayImage;
 }overlay;
 
 class OverlayEditor{
@@ -85,6 +87,7 @@ public:
    void setLayer(int layer);
    void newLayer();
    void removeLayer(int layer);
+   void setLayerImage(const QString& imagePath);
 
    //GUI readback funcs
    bool singleObjectSelected(){return selectedObjects.size() == 1;}
@@ -105,6 +108,7 @@ public:
    void remove();
    void resize(double w, double h);//multiplier, 1.0 = stay the same
    void resizeGroupSpacing(double w, double h);//multiplier, 1.0 = stay the same
+   QString alignObjectWithBorderPixels();
    void setCollisionType(bool r);
 };
 

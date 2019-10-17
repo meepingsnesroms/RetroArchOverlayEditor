@@ -26,6 +26,7 @@ CONFIG += c++11
 INCLUDEPATH += libretro-common/include
 
 SOURCES += \
+    about.cpp \
     main.cpp \
     mainwindow.cpp \
     overlaydisplay.cpp \
@@ -43,6 +44,7 @@ SOURCES += \
     libretro-common/vfs/vfs_implementation.c
 
 HEADERS += \
+    about.h \
     libretro-common/include/compat/msvc/stdint.h \
     libretro-common/include/compat/fopen_utf8.h \
     libretro-common/include/compat/msvc.h \
@@ -68,6 +70,7 @@ HEADERS += \
     overlayeditor.h
 
 FORMS += \
+    about.ui \
     mainwindow.ui
 
 # Default rules for deployment.

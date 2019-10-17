@@ -5,6 +5,7 @@
 
 #include <QInputDialog>
 #include <QFileDialog>
+#include <QMessageBox>
 
 
 #define DEFAULT_WIDTH 640
@@ -47,10 +48,25 @@ MainWindow::MainWindow(QWidget* parent) :
    connect(saveAsAction, &QAction::triggered, this, &MainWindow::saveAs);
    ui->menuFile->addAction(saveAsAction);
 
+   QAction* setCanvasSizeAction = new QAction("Set Canvas Size", this);
+   setCanvasSizeAction->setStatusTip("Change the size of the framebuffer being rendered to");
+   connect(setCanvasSizeAction, &QAction::triggered, this, &MainWindow::setCanvasSize);
+   ui->menuActions->addAction(setCanvasSizeAction);
+
    QAction* setBackgroundAction = new QAction("Set Background", this);
    setBackgroundAction->setStatusTip("Change the current background");
    connect(setBackgroundAction, &QAction::triggered, this, &MainWindow::setBackground);
    ui->menuActions->addAction(setBackgroundAction);
+
+   QAction* setLayerImageAction = new QAction("Set Layer Image", this);
+   setLayerImageAction->setStatusTip("Set layer image for overlay");
+   connect(setLayerImageAction, &QAction::triggered, this, &MainWindow::setLayerImage);
+   ui->menuActions->addAction(setLayerImageAction);
+
+   QAction* removeLayerImageAction = new QAction("Remove Layer Image", this);
+   removeLayerImageAction->setStatusTip("Remove layer image from overlay");
+   connect(removeLayerImageAction, &QAction::triggered, this, &MainWindow::removeLayerImage);
+   ui->menuActions->addAction(removeLayerImageAction);
 
    QAction* addButtonAction = new QAction("Add Button", this);
    addButtonAction->setStatusTip("Add a button");
@@ -92,12 +108,12 @@ MainWindow::MainWindow(QWidget* parent) :
    connect(setObjectsCoordinatesAction, &QAction::triggered, this, &MainWindow::setObjectsCoordinates);
    ui->menuActions->addAction(setObjectsCoordinatesAction);
 
-   QAction* alignObjectWithBorderPixelsAction = new QAction("Align Object With Border Pixels", this);
+   QAction* alignObjectWithBorderPixelsAction = new QAction("Align Object With Border Pixels (UNIMPL)", this);
    alignObjectWithBorderPixelsAction->setStatusTip("Match outer 1 pixel border to of object to background and move object there");
    connect(alignObjectWithBorderPixelsAction, &QAction::triggered, this, &MainWindow::alignObjectWithBorderPixels);
    ui->menuActions->addAction(alignObjectWithBorderPixelsAction);
 
-   QAction* advancedEditAction = new QAction("Advanced Edit", this);
+   QAction* advancedEditAction = new QAction("Advanced Edit (UNIMPL)", this);
    advancedEditAction->setStatusTip("Directly edit overlay object code");
    connect(advancedEditAction, &QAction::triggered, this, &MainWindow::advancedEdit);
    ui->menuActions->addAction(advancedEditAction);
@@ -120,11 +136,14 @@ MainWindow::~MainWindow(){
 }
 
 void MainWindow::redraw(){
+   //ui->menuLayer->actions().
+
    //redraw this UI, not the overlay editor
    ui->menuLayer->clear();
    for(int index = 0; index < editor->getTotalLayers(); index++){
       QAction* layerSelectAction = new QAction(QString::number(index), this);
-      connect(layerSelectAction, &QAction::triggered, this, &MainWindow::about);
+      layerSelectAction->setProperty("layer_num", index);
+      connect(layerSelectAction, &QAction::triggered, this, &MainWindow::layerChange);
       ui->menuLayer->addAction(layerSelectAction);
    }
 }
@@ -182,11 +201,46 @@ void MainWindow::saveAs(){
       editor->saveToFile(overlay);
 }
 
+void MainWindow::setCanvasSize(){
+   bool ok;
+   QString widthHeight = QInputDialog::getText(this, "Set Canvas Size", "New Canvas Size:", QLineEdit::Normal, QString::number(DEFAULT_WIDTH) + ", " + QString::number(DEFAULT_HEIGHT), &ok);
+
+   if(ok){
+      QStringList widthHeightSplit = widthHeight.split(",");
+
+      if(widthHeightSplit.size() == 2){
+         bool ok[2];
+         int wh[2];
+
+         wh[0] = widthHeightSplit[0].toInt(&ok[0]);
+         wh[1] = widthHeightSplit[1].toInt(&ok[1]);
+
+         if(ok[0] && ok[1] && wh[0] > 0 && wh[1] > 0){
+            refreshDisplay->stop();
+            //dont render when canvas is null
+            editor->setCanvasSize(wh[0], wh[1]);
+            refreshDisplay->start();
+         }
+      }
+   }
+}
+
 void MainWindow::setBackground(){
-   QString image = QFileDialog::getOpenFileName(this, "Load Background Image", QDir::root().path(), "Image (*.png *.jpg *.jpeg *.bmp)");
+   QString image = QFileDialog::getOpenFileName(this, "Choose Background Image", QDir::root().path(), "Image (*.png *.jpg *.jpeg *.bmp)");
 
    if(image != "")
       editor->setBackground(image);
+}
+
+void MainWindow::setLayerImage(){
+   QString image = QFileDialog::getOpenFileName(this, "Choose Layer Image", QDir::root().path(), "Image (*.png *.jpg *.jpeg *.bmp)");
+
+   if(image != "")
+      editor->setLayerImage(image);
+}
+
+void MainWindow::removeLayerImage(){
+   editor->setLayerImage("");
 }
 
 void MainWindow::addButton(){
@@ -204,7 +258,7 @@ void MainWindow::deleteObjects(){
 void MainWindow::setObjectName(){
    if(editor->singleObjectSelected()){
       bool ok;
-      QString name = QInputDialog::getText(this, "Object Name", "Object Name:", QLineEdit::Normal, "", &ok);
+      QString name = QInputDialog::getText(this, "Choose Object Name", "Object Name:", QLineEdit::Normal, "", &ok);
 
       if(ok)
          editor->setObjectName(name);
@@ -212,7 +266,7 @@ void MainWindow::setObjectName(){
 }
 
 void MainWindow::setObjectImage(){
-   QString image = QFileDialog::getOpenFileName(this, "Load Object Image", QDir::root().path(), "Image (*.png *.jpg *.jpeg *.bmp)");
+   QString image = QFileDialog::getOpenFileName(this, "Choose Object Image", QDir::root().path(), "Image (*.png *.jpg *.jpeg *.bmp)");
 
    if(image != "")
       editor->setObjectImage(image);
@@ -228,26 +282,43 @@ void MainWindow::setSquareObjects(){
 
 void MainWindow::setObjectsCoordinates(){
    bool ok;
-   QString coordinates = QInputDialog::getText(this, "Object(s) Coordinates", "Object(s) Coordinates:", QLineEdit::Normal, "0.5, 0.5", &ok);
+   QString coordinates = QInputDialog::getText(this, "Set Object(s) Coordinates", "Object(s) New Coordinates:", QLineEdit::Normal, "0.5, 0.5", &ok);
 
    if(ok){
-      QStringList coordinates2 = coordinates.split(",");
+      QStringList coordinatesSplit = coordinates.split(",");
 
-      if(coordinates2.size() == 2)
-         editor->setObjectsCoordinates(coordinates2[0].toDouble(), coordinates2[1].toDouble());
+      if(coordinatesSplit.size() == 2){
+         bool ok[2];
+         double xy[2];
+
+         xy[0] = coordinatesSplit[0].toDouble(&ok[0]);
+         xy[1] = coordinatesSplit[1].toDouble(&ok[1]);
+
+         if(ok[0] && ok[1])
+            editor->setObjectsCoordinates(xy[0], xy[1]);
+      }
    }
 }
 
 void MainWindow::alignObjectWithBorderPixels(){
+   QString errorMessage = editor->alignObjectWithBorderPixels();
 
+   if(errorMessage != "")
+      QMessageBox::information(this, "Align Object With Border Pixels", errorMessage);
 }
 
 void MainWindow::advancedEdit(){
    //TODO: need to save file to temp, load it in an editor and when its closed reload from temp
 }
 
-void MainWindow::about(){
+void MainWindow::layerChange(){
+   int layer = sender()->property("layer_num").toInt();
 
+   editor->setLayer(layer);
+}
+
+void MainWindow::about(){
+   aboutWindow.exec();
 }
 
 void MainWindow::on_sizeSlider_sliderMoved(int position){

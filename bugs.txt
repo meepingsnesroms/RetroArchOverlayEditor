@@ -1,0 +1,6 @@
+Cant add or delete layers
+Unknown varibles are deleted on save
+
+Fixed:
+Cant move objects on layers other than 0
+Layer backgrounds are unimplemented

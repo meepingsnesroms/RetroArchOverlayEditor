@@ -5,6 +5,7 @@
 #include <QTimer>
 
 #include "overlayeditor.h"
+#include "about.h"
 
 namespace Ui {
 class MainWindow;
@@ -33,7 +34,10 @@ private slots:
    void saveAs();
 
    //action menu
+   void setCanvasSize();
    void setBackground();
+   void setLayerImage();
+   void removeLayerImage();
    void addButton();
    void addJoystick();
    void deleteObjects();
@@ -44,6 +48,9 @@ private slots:
    void setObjectsCoordinates();
    void alignObjectWithBorderPixels();
    void advancedEdit();
+
+   //layer menu
+   void layerChange();
 
    //about menu
    void about();
@@ -65,6 +72,7 @@ private:
    int             widthSliderLastPostion;
    int             heightSliderLastPostion;
    QTimer*         refreshDisplay;
+   About           aboutWindow;
 };
 
 #endif

@@ -1,6 +1,6 @@
 #include "overlayeditor.h"
 
-//QT headers
+//Qt headers
 #include <QtGlobal>
 #include <QString>
 #include <QPixmap>
@@ -48,7 +48,7 @@ bool OverlayEditor::hitboxSquare(double x1, double y1, double w1, double h1, dou
 
 bool OverlayEditor::touchedSelectedObject(double x, double y){
    for(int index = 0; index < selectedObjects.size(); index++)
-      if(objects[index].layer == currentLayer && hitboxDot(selectedObjects[index]->x, selectedObjects[index]->y, selectedObjects[index]->width, selectedObjects[index]->height, x, y))
+      if(hitboxDot(selectedObjects[index]->x, selectedObjects[index]->y, selectedObjects[index]->width, selectedObjects[index]->height, x, y))
          return true;
    return false;
 }
@@ -112,6 +112,10 @@ void OverlayEditor::render(){
       renderer->drawRect(QRect(0, 0, framebuffer->width(), framebuffer->height()));
    }
 
+   //draw layer image
+   if(!layers[currentLayer].overlayImage.isNull())
+      renderer->drawPixmap(QRect(0, 0, framebuffer->width(), framebuffer->height()), layers[currentLayer].overlayImage, QRect(0, 0, layers[currentLayer].overlayImage.width(), layers[currentLayer].overlayImage.height()));
+
    //draw grid
    if(gridSize > 0.0){
       renderer->setPen(QPen(gridColor, (double)framebuffer->width() / 1000.0));
@@ -148,7 +152,7 @@ void OverlayEditor::render(){
 
 void OverlayEditor::reset(){
    layers.clear();
-   layers += {false, false, 0.0, 0.0};//new layer 0 has no params
+   layers += {false, false, 0.0, 0.0, "", QPixmap()};//new layer 0 has no params
    objects.clear();
    selectedObjects.clear();
    background = QPixmap();
@@ -181,6 +185,8 @@ void OverlayEditor::saveToFile(const QString& path){
          config_set_double(fileInput, (item + "_range_mod").toStdString().c_str(), layers[currentOverlay].rangeMod);
       if(layers[currentOverlay].alphaModExists)
          config_set_double(fileInput, (item + "_alpha_mod").toStdString().c_str(), layers[currentOverlay].alphaMod);
+      if(layers[currentOverlay].overlayImagePath != "")
+         config_set_string(fileInput, (item + "_overlay").toStdString().c_str(), layers[currentOverlay].overlayImagePath.toStdString().c_str());
    }
 
    //add objects
@@ -225,9 +231,16 @@ void OverlayEditor::loadFromFile(const QString& path){
    //save layer parameters for later
    for(int currentOverlay = 0; currentOverlay < totalLayers; currentOverlay++){
       QString item = "overlay" + QString::number(currentOverlay);
+      char* layerImagePtr = "";
+      QString layerImage;
 
       layers[currentOverlay].rangeModExists = config_get_double(fileInput, (item + "_range_mod").toStdString().c_str(), &layers[currentOverlay].rangeMod);
       layers[currentOverlay].alphaModExists = config_get_double(fileInput, (item + "_alpha_mod").toStdString().c_str(), &layers[currentOverlay].alphaMod);
+      config_get_string(fileInput, (item + "_overlay").toStdString().c_str(), &layerImagePtr);
+      layerImage = layerImagePtr;
+      layers[currentOverlay].overlayImagePath = layerImage;
+      if(layerImage != "")
+         layers[currentOverlay].overlayImage = QPixmap(QFileInfo(path).path() + "/" + layerImage);
    }
 
    //add objects
@@ -295,6 +308,29 @@ void OverlayEditor::setCanvasSize(int w, int h){
       framebuffer = new QPixmap(w, h);
       renderer = new QPainter(framebuffer);
    }
+
+   render();
+}
+
+void OverlayEditor::setBackground(const QString& imagePath){
+   if(imagePath.isEmpty()){
+      //remove background
+      background = QPixmap();
+   }
+   else{
+      //set background
+      QPixmap backgroundImage(imagePath);
+
+      if(!backgroundImage.isNull())
+         background = backgroundImage;
+   }
+
+   render();
+}
+
+void OverlayEditor::setGrid(double size, QColor color){
+   gridSize = size;
+   gridColor = color;
 }
 
 void OverlayEditor::setLayer(int layer){
@@ -307,7 +343,7 @@ void OverlayEditor::setLayer(int layer){
 }
 
 void OverlayEditor::newLayer(){
-   layers += {false, false, 0.0, 0.0};
+   layers += {false, false, 0.0, 0.0, "", QPixmap()};
    totalLayers++;
 }
 
@@ -334,25 +370,21 @@ void OverlayEditor::removeLayer(int layer){
    }
 }
 
-void OverlayEditor::setBackground(const QString& imagePath){
+void OverlayEditor::setLayerImage(const QString& imagePath){
    if(imagePath.isEmpty()){
       //remove background
-      background = QPixmap();
+      layers[currentLayer].overlayImagePath = "";
+      layers[currentLayer].overlayImage = QPixmap();
    }
    else{
-      //set background
-      QPixmap backgroundImage(imagePath);
+      //set layer image
+      QPixmap layerImage(imagePath);
 
-      if(!backgroundImage.isNull())
-         background = backgroundImage;
+      if(!layerImage.isNull())
+         layers[currentLayer].overlayImage = layerImage;
    }
 
    render();
-}
-
-void OverlayEditor::setGrid(double size, QColor color){
-   gridSize = size;
-   gridColor = color;
 }
 
 void OverlayEditor::mouseDown(double x, double y){
@@ -501,6 +533,25 @@ void OverlayEditor::resizeGroupSpacing(double w, double h){
 
       render();
    }
+}
+
+QString OverlayEditor::alignObjectWithBorderPixels(){
+   if(selectedObjects.size() == 1){
+      //TODO: make this work
+      //first find matching top left pixel
+      //then check if all the others match, if they dont keep searching until the end of the image
+      //when a match is found log it and finish searching untill another match is found of file ends
+      //if exacly 1 match is found place button over it otherwise throw an error
+      /*
+      "Cannot match, button image is bigger then background."
+      "Multiple matches, dont know where to put button."
+      "No matching area found."
+      */
+
+      render();
+   }
+
+   return "";
 }
 
 void OverlayEditor::setCollisionType(bool r){
