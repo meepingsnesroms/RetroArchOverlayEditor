@@ -9,9 +9,12 @@ About::About(QWidget* parent) :
    ui(new Ui::About){
    ui->setupUi(this);
 
+   // remove question mark from the title bar
+   setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
+
+   //make logos draw properly
    ui->logo1->installEventFilter(this);
    ui->logo2->installEventFilter(this);
-
    ui->logo1->setObjectName("logo1");
    ui->logo2->setObjectName("logo2");
 }
