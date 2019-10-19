@@ -281,7 +281,7 @@ void MainWindow::deleteObjects(){
 void MainWindow::setObjectName(){
    if(editor->singleObjectSelected()){
       bool ok;
-      QString name = QInputDialog::getText(this, "Choose Object Name", "Object Name:", QLineEdit::Normal, "", &ok);
+      QString name = QInputDialog::getText(this, "Choose Object Name", "Object Name:", QLineEdit::Normal, editor->getObjectName(), &ok);
 
       if(ok)
          editor->setObjectName(name);
