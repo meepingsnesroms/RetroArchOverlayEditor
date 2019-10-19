@@ -118,6 +118,11 @@ MainWindow::MainWindow(QWidget* parent) :
    connect(setObjectsCoordinatesAction, &QAction::triggered, this, &MainWindow::setObjectsCoordinates);
    ui->menuActions->addAction(setObjectsCoordinatesAction);
 
+   QAction* setObjectsSizeAction = new QAction("Set Object(s) Size", this);
+   setObjectsSizeAction->setStatusTip("Directly set the size of the selected object or object group");
+   connect(setObjectsSizeAction, &QAction::triggered, this, &MainWindow::setObjectsSize);
+   ui->menuActions->addAction(setObjectsSizeAction);
+
    QAction* alignObjectWithBorderPixelsAction = new QAction("Align Object With Border Pixels (UNIMPLEMENTED)", this);
    alignObjectWithBorderPixelsAction->setStatusTip("Match outer 1 pixel border to of object to background and move object there");
    connect(alignObjectWithBorderPixelsAction, &QAction::triggered, this, &MainWindow::alignObjectWithBorderPixels);
@@ -216,22 +221,27 @@ void MainWindow::saveAs(){
 
 void MainWindow::setCanvasSize(){
    bool ok;
-   QString widthHeight = QInputDialog::getText(this, "Set Canvas Size", "New Canvas Size:", QLineEdit::Normal, QString::number(DEFAULT_WIDTH) + ", " + QString::number(DEFAULT_HEIGHT), &ok);
+   QString widthHeight;
+   int width;
+   int height;
+
+   editor->getCanvasSize(&width, &height);
+
+   widthHeight = QInputDialog::getText(this, "Set Canvas Size", "New Canvas Size:", QLineEdit::Normal, QString::number(width) + ", " + QString::number(height), &ok);
 
    if(ok){
       QStringList widthHeightSplit = widthHeight.split(",");
 
       if(widthHeightSplit.size() == 2){
          bool ok[2];
-         int wh[2];
 
-         wh[0] = widthHeightSplit[0].toInt(&ok[0]);
-         wh[1] = widthHeightSplit[1].toInt(&ok[1]);
+         width = widthHeightSplit[0].toInt(&ok[0]);
+         height = widthHeightSplit[1].toInt(&ok[1]);
 
-         if(ok[0] && ok[1] && wh[0] > 0 && wh[1] > 0){
+         if(ok[0] && ok[1] && width > 0 && height > 0){
             refreshDisplay->stop();
             //dont render when canvas is null
-            editor->setCanvasSize(wh[0], wh[1]);
+            editor->setCanvasSize(width, height);
             refreshDisplay->start();
          }
       }
@@ -289,10 +299,12 @@ void MainWindow::setObjectName(){
 }
 
 void MainWindow::setObjectImage(){
-   QString image = QFileDialog::getOpenFileName(this, "Choose Object Image", QDir::root().path(), "Image (*.png *.jpg *.jpeg *.bmp)");
+   if(editor->singleObjectSelected()){
+      QString image = QFileDialog::getOpenFileName(this, "Choose Object Image", QDir::root().path(), "Image (*.png *.jpg *.jpeg *.bmp)");
 
-   if(image != "")
-      editor->setObjectImage(image);
+      if(image != "")
+         editor->setObjectImage(image);
+   }
 }
 
 void MainWindow::setCircularObjects(){
@@ -304,21 +316,55 @@ void MainWindow::setSquareObjects(){
 }
 
 void MainWindow::setObjectsCoordinates(){
-   bool ok;
-   QString coordinates = QInputDialog::getText(this, "Set Object(s) Coordinates", "Object(s) New Coordinates:", QLineEdit::Normal, "0.5, 0.5", &ok);
+   if(editor->singleObjectSelected() || editor->multipleObjectsSelected()){
+      bool ok;
+      QString coordinates;
+      double x;
+      double y;
 
-   if(ok){
-      QStringList coordinatesSplit = coordinates.split(",");
+      editor->getObjectsCoordinates(&x, &y);
 
-      if(coordinatesSplit.size() == 2){
-         bool ok[2];
-         double xy[2];
+      coordinates = QInputDialog::getText(this, "Set Object(s) Coordinates", "Object(s) New Coordinates:", QLineEdit::Normal, QString::number(x) + ", " + QString::number(y), &ok);
 
-         xy[0] = coordinatesSplit[0].toDouble(&ok[0]);
-         xy[1] = coordinatesSplit[1].toDouble(&ok[1]);
+      if(ok){
+         QStringList coordinatesSplit = coordinates.split(",");
 
-         if(ok[0] && ok[1])
-            editor->setObjectsCoordinates(xy[0], xy[1]);
+         if(coordinatesSplit.size() == 2){
+            bool ok[2];
+
+            x = coordinatesSplit[0].toDouble(&ok[0]);
+            y = coordinatesSplit[1].toDouble(&ok[1]);
+
+            if(ok[0] && ok[1])
+               editor->setObjectsCoordinates(x, y);
+         }
+      }
+   }
+}
+
+void MainWindow::setObjectsSize(){
+   if(editor->singleObjectSelected() || editor->multipleObjectsSelected()){
+      bool ok;
+      QString widthHeight;
+      double width;
+      double height;
+
+      editor->getObjectsSize(&width, &height);
+
+      widthHeight = QInputDialog::getText(this, "Set Object(s) Size", "Object(s) New Size:", QLineEdit::Normal, QString::number(width) + ", " + QString::number(height), &ok);
+
+      if(ok){
+         QStringList widthHeightSplit = widthHeight.split(",");
+
+         if(widthHeightSplit.size() == 2){
+            bool ok[2];
+
+            width = widthHeightSplit[0].toDouble(&ok[0]);
+            height = widthHeightSplit[1].toDouble(&ok[1]);
+
+            if(ok[0] && ok[1])
+               editor->setObjectsSize(width, height);
+         }
       }
    }
 }

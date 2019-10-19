@@ -48,6 +48,7 @@ private slots:
    void setCircularObjects();
    void setSquareObjects();
    void setObjectsCoordinates();
+   void setObjectsSize();
    void alignObjectWithBorderPixels();
    void advancedEdit();
 

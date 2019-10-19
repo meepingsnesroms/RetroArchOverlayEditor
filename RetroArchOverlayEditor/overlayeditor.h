@@ -17,11 +17,6 @@ enum{
 };
 
 typedef struct{
-   double double_0;
-   double double_1;
-}double_2;
-
-typedef struct{
    uint8_t type;//type
    double  x;
    double  y;
@@ -67,19 +62,20 @@ private:
    bool hitboxSquare(double x1, double y1, double w1, double h1, double x2, double y2, double w2, double h2);
    bool touchedSelectedObject(double x, double y);
    void updateSelectedObjects(double x, double y, double w, double h, bool area);
-   double_2 getCenterOfSelectedObjects();
+   void getCenterOfSelectedObjects(double* x, double* y);
    void moveSelectedObjects(double x, double y);//in deltas, not absolute
    void render();
 
 public:
-   OverlayEditor(int w, int h);
+   OverlayEditor(int width, int height);
    ~OverlayEditor();
 
    //environment configuration
    void reset();
    void saveToFile(const QString& path);
    void loadFromFile(const QString& path);
-   void setCanvasSize(int w, int h);
+   void setCanvasSize(int width, int height);
+   void getCanvasSize(int* width, int* height){*width = framebuffer->width(); *height = framebuffer->height();}
    void setBackground(const QString& imagePath);
    void setGrid(double size, QColor color);//-1.0 = disabled
    int  getTotalLayers() const{return totalLayers;}
@@ -91,7 +87,7 @@ public:
 
    //GUI readback funcs
    bool singleObjectSelected(){return selectedObjects.size() == 1;}
-   QString getObjectName(){return selectedObjects.size() == 1 ? selectedObjects[0]->name : "";}
+   bool multipleObjectsSelected(){return selectedObjects.size() > 1;}
 
    //I/O
    const QPixmap& getImage(){return *framebuffer;}
@@ -102,9 +98,13 @@ public:
    //button configuration
    void addButton();
    void addJoystick();
+   QString getObjectName(){return selectedObjects.size() == 1 ? selectedObjects[0]->name : "";}
    void setObjectName(const QString& name);
    void setObjectImage(const QString& imagePath);
+   void getObjectsCoordinates(double* x, double* y){getCenterOfSelectedObjects(x, y);}
    void setObjectsCoordinates(double x, double y);
+   void getObjectsSize(double* width, double* height);
+   void setObjectsSize(double width, double height);
    void remove();
    void resize(double w, double h);//multiplier, 1.0 = stay the same
    void resizeGroupSpacing(double w, double h);//multiplier, 1.0 = stay the same

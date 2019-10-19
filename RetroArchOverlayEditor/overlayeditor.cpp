@@ -11,8 +11,8 @@
 #include <file/config_file.h>
 
 
-OverlayEditor::OverlayEditor(int w, int h){
-   framebuffer = new QPixmap(w > 0 ? w : 1, h > 0 ? h : 1);//0 or negative sized framebuffer will cause problems
+OverlayEditor::OverlayEditor(int width, int height){
+   framebuffer = new QPixmap(width > 0 ? width : 1, height > 0 ? height : 1);//0 or negative sized framebuffer will cause problems
    renderer = new QPainter(framebuffer);
    renderer->setBrush(QColor("Black"));
    renderer->drawRect(QRect(0, 0, framebuffer->width(), framebuffer->height()));
@@ -71,25 +71,28 @@ void OverlayEditor::updateSelectedObjects(double x, double y, double w, double h
    }
 }
 
-double_2 OverlayEditor::getCenterOfSelectedObjects(){
+void OverlayEditor::getCenterOfSelectedObjects(double* x, double* y){
    if(selectedObjects.size() == 1){
-      return {selectedObjects[0]->x, selectedObjects[0]->y};
+      *x = selectedObjects[0]->x + selectedObjects[0]->width / 2.0;
+      *y = selectedObjects[0]->y + selectedObjects[0]->height / 2.0;
    }
    else if(selectedObjects.size() > 1){
       double groupCenterX = 0.0;
       double groupCenterY = 0.0;
 
       for(int index = 0; index < selectedObjects.size(); index++){
-         groupCenterX += selectedObjects[index]->x + selectedObjects[index]->width / 2;
-         groupCenterY += selectedObjects[index]->y + selectedObjects[index]->height / 2;
+         groupCenterX += selectedObjects[index]->x + selectedObjects[index]->width / 2.0;
+         groupCenterY += selectedObjects[index]->y + selectedObjects[index]->height / 2.0;
       }
       groupCenterX /= selectedObjects.size();
       groupCenterY /= selectedObjects.size();
 
-      return {groupCenterX, groupCenterY};
+      *x = groupCenterX;
+      *y = groupCenterY;
    }
    else{
-      return {0.5, 0.5};
+      *x = 0.5;
+      *y = 0.5;
    }
 }
 
@@ -301,11 +304,11 @@ void OverlayEditor::loadFromFile(const QString& path){
    render();
 }
 
-void OverlayEditor::setCanvasSize(int w, int h){
-   if(w > 0 && h > 0){
+void OverlayEditor::setCanvasSize(int width, int height){
+   if(width > 0 && height > 0){
       delete renderer;
       delete framebuffer;
-      framebuffer = new QPixmap(w, h);
+      framebuffer = new QPixmap(width, height);
       renderer = new QPainter(framebuffer);
    }
 
@@ -491,15 +494,43 @@ void OverlayEditor::setObjectsCoordinates(double x, double y){
       render();
    }
    else if(selectedObjects.size() > 1){
-      double_2 groupCenter = getCenterOfSelectedObjects();
-      double groupCenterX = groupCenter.double_0;
-      double groupCenterY = groupCenter.double_1;
+      double groupCenterX;
+      double groupCenterY;
+
+      getCenterOfSelectedObjects(&groupCenterX, &groupCenterY);
 
       for(int index = 0; index < selectedObjects.size(); index++){
          selectedObjects[index]->x += x - groupCenterX;
          selectedObjects[index]->y += y - groupCenterY;
       }
       render();
+   }
+}
+
+void OverlayEditor::getObjectsSize(double* width, double* height){
+   if(selectedObjects.size() == 1){
+      *width = selectedObjects[0]->width;
+      *height = selectedObjects[0]->height;
+   }
+   else if(selectedObjects.size() > 1){
+      //TODO: this will be way complicated
+   }
+   else{
+      *width = 0.0;
+      *height = 0.0;
+   }
+}
+
+void OverlayEditor::setObjectsSize(double width, double height){
+   if(selectedObjects.size() == 1){
+      selectedObjects[0]->x = selectedObjects[0]->x + selectedObjects[0]->width / 2.0 - width / 2.0;
+      selectedObjects[0]->y = selectedObjects[0]->y + selectedObjects[0]->height / 2.0 - height / 2.0;
+      selectedObjects[0]->width = width;
+      selectedObjects[0]->height = height;
+      render();
+   }
+   else if(selectedObjects.size() > 1){
+      //TODO: this will be way complicated
    }
 }
 
@@ -532,9 +563,10 @@ void OverlayEditor::resize(double w, double h){
 
 void OverlayEditor::resizeGroupSpacing(double w, double h){
    if(selectedObjects.size() > 1){
-      double_2 groupCenter = getCenterOfSelectedObjects();
-      double groupCenterX = groupCenter.double_0;
-      double groupCenterY = groupCenter.double_1;
+      double groupCenterX;
+      double groupCenterY;
+
+      getCenterOfSelectedObjects(&groupCenterX, &groupCenterY);
 
       for(int index = 0; index < selectedObjects.size(); index++){
          double distanceFromGroupCenterX = selectedObjects[index]->x + selectedObjects[index]->width / 2 - groupCenterX;
