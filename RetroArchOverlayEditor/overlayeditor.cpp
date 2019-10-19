@@ -119,15 +119,6 @@ void OverlayEditor::render(){
    if(!layers[currentLayer].overlayImage.isNull())
       renderer->drawPixmap(QRect(0, 0, framebuffer->width(), framebuffer->height()), layers[currentLayer].overlayImage, QRect(0, 0, layers[currentLayer].overlayImage.width(), layers[currentLayer].overlayImage.height()));
 
-   //draw grid
-   if(gridSize > 0.0){
-      renderer->setPen(QPen(gridColor, (double)framebuffer->width() / 1000.0));
-      for(double hLine = 0.0; hLine <= 1.0; hLine += gridSize)
-         renderer->drawLine(QLine(0, hLine * (framebuffer->height() - 1), framebuffer->width() - 1, hLine * (framebuffer->height() - 1)));
-      for(double vLine = 0.0; vLine <= 1.0; vLine += gridSize)
-         renderer->drawLine(QLine(vLine * (framebuffer->width() - 1), 0, vLine * (framebuffer->width() - 1), framebuffer->height() - 1));
-   }
-
    //draw all objects
    for(int index = 0; index < objects.size(); index++)
       if(objects[index].layer == currentLayer)
@@ -159,25 +150,22 @@ void OverlayEditor::reset(){
    objects.clear();
    selectedObjects.clear();
    background = QPixmap();
-   gridSize = -1.0;
-   gridColor = QColor("Blue");
    mouseActive = false;
    mouseDownX = -1.0;
    mouseDownY = -1.0;
    mouseLastX = -1.0;
    mouseLastY = -1.0;
    currentLayer = 0;
-   totalLayers = 1;
 }
 
 void OverlayEditor::saveToFile(const QString& path){
    config_file_t* fileInput = config_file_new(NULL);
 
    //set layer count
-   config_set_int(fileInput, "overlays", totalLayers);
+   config_set_int(fileInput, "overlays", layers.size());
 
    //save layer parameters
-   for(int currentOverlay = 0; currentOverlay < totalLayers; currentOverlay++){
+   for(int currentOverlay = 0; currentOverlay < layers.size(); currentOverlay++){
       QString item = "overlay" + QString::number(currentOverlay);
 
       config_set_string(fileInput, (item + "_name").toStdString().c_str(), item.toStdString().c_str());
@@ -193,7 +181,7 @@ void OverlayEditor::saveToFile(const QString& path){
    }
 
    //add objects
-   for(int currentOverlay = 0; currentOverlay < totalLayers; currentOverlay++){
+   for(int currentOverlay = 0; currentOverlay < layers.size(); currentOverlay++){
       QString curOverlayStr = "overlay" + QString::number(currentOverlay);
       int layerButtons = 0;
 
@@ -219,6 +207,7 @@ void OverlayEditor::saveToFile(const QString& path){
 
 void OverlayEditor::loadFromFile(const QString& path){
    config_file_t* fileInput = config_file_new(path.toStdString().c_str());
+   int totalLayers = 0;
 
    //only continue if file existed
    if(!fileInput)
@@ -331,13 +320,8 @@ void OverlayEditor::setBackground(const QString& imagePath){
    render();
 }
 
-void OverlayEditor::setGrid(double size, QColor color){
-   gridSize = size;
-   gridColor = color;
-}
-
 void OverlayEditor::setLayer(int layer){
-   if(layer >= 0 && layer < totalLayers){
+   if(layer >= 0 && layer < layers.size()){
       currentLayer = layer;
       selectedObjects.clear();
 
@@ -347,19 +331,18 @@ void OverlayEditor::setLayer(int layer){
 
 void OverlayEditor::newLayer(){
    layers += {false, false, 0.0, 0.0, "", QPixmap()};
-   totalLayers++;
 }
 
 void OverlayEditor::removeLayer(int layer){
    //cant delete layer 0
-   if(totalLayers > 1 && layer < totalLayers){
+   if(layers.size() > 1 && layer < layers.size()){
       int setNewLayer = -1;
 
       //maintain current displayed image if possible
       if(currentLayer > layer)
          setNewLayer = currentLayer - 1;
       else if(currentLayer == layer){
-         if(layer == totalLayers - 1)
+         if(layer == layers.size() - 1)
             setNewLayer = currentLayer - 1;
          else
             setNewLayer = currentLayer;
@@ -377,7 +360,6 @@ void OverlayEditor::removeLayer(int layer){
       }
 
       layers.remove(layer);
-      totalLayers--;
 
       if(setNewLayer != -1){
          setLayer(setNewLayer);

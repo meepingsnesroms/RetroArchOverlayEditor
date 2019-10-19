@@ -47,10 +47,7 @@ private:
    QVector<overlay_object>  objects;
    QVector<overlay_object*> selectedObjects;
    QPixmap                  background;
-   double                   gridSize;
-   QColor                   gridColor;
    int                      currentLayer;
-   int                      totalLayers;
    bool                     mouseActive;
    double                   mouseDownX;
    double                   mouseDownY;
@@ -77,8 +74,7 @@ public:
    void setCanvasSize(int width, int height);
    void getCanvasSize(int* width, int* height){*width = framebuffer->width(); *height = framebuffer->height();}
    void setBackground(const QString& imagePath);
-   void setGrid(double size, QColor color);//-1.0 = disabled
-   int  getTotalLayers() const{return totalLayers;}
+   int  getTotalLayers() const{return layers.size();}
    int  getLayer() const{return currentLayer;}
    void setLayer(int layer);
    void newLayer();
