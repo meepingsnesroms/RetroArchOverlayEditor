@@ -99,9 +99,14 @@ MainWindow::MainWindow(QWidget* parent) :
    ui->menuActions->addAction(setObjectNameAction);
 
    QAction* setObjectImageAction = new QAction("Set Object Image", this);
-   setObjectImageAction->setStatusTip("Set image displayed for object");
+   setObjectImageAction->setStatusTip("Set image displayed for selected object");
    connect(setObjectImageAction, &QAction::triggered, this, &MainWindow::setObjectImage);
    ui->menuActions->addAction(setObjectImageAction);
+
+   QAction* removeObjectImageAction = new QAction("Remove Object Image", this);
+   removeObjectImageAction->setStatusTip("Remove the image attached to the selected object");
+   connect(removeObjectImageAction, &QAction::triggered, this, &MainWindow::removeObjectImage);
+   ui->menuActions->addAction(removeObjectImageAction);
 
    QAction* setCircularObjectsAction = new QAction("Set Circular Object(s)", this);
    setCircularObjectsAction->setStatusTip("Make the selected objects hitbox circular");
@@ -193,6 +198,11 @@ void MainWindow::updateDisplay(){
    ui->framebuffer->repaint();
 }
 
+void MainWindow::handleErrorCode(const QString& function, const QString& errorCode){
+   if(errorCode != "")
+      QMessageBox::information(this, function, errorCode);
+}
+
 void MainWindow::new_DERESERVED(){
    editor->setCanvasSize(DEFAULT_WIDTH, DEFAULT_HEIGHT);
    editor->reset();
@@ -277,11 +287,11 @@ void MainWindow::deleteLayer(){
 }
 
 void MainWindow::addButton(){
-   editor->addButton();
+   editor->addObject(false);
 }
 
 void MainWindow::addJoystick(){
-   editor->addJoystick();
+   editor->addObject(true);
 }
 
 void MainWindow::deleteObjects(){
@@ -294,7 +304,7 @@ void MainWindow::setObjectName(){
       QString name = QInputDialog::getText(this, "Choose Object Name", "Object Name:", QLineEdit::Normal, editor->getObjectName(), &ok);
 
       if(ok)
-         editor->setObjectName(name);
+         handleErrorCode("Set Object Name", editor->setObjectName(name));
    }
 }
 
@@ -305,6 +315,11 @@ void MainWindow::setObjectImage(){
       if(image != "")
          editor->setObjectImage(image);
    }
+}
+
+void MainWindow::removeObjectImage(){
+   if(editor->singleObjectSelected())
+      editor->setObjectImage("");
 }
 
 void MainWindow::setCircularObjects(){
@@ -370,10 +385,7 @@ void MainWindow::setObjectsSize(){
 }
 
 void MainWindow::alignObjectWithBorderPixels(){
-   QString errorMessage = editor->alignObjectWithBorderPixels();
-
-   if(errorMessage != "")
-      QMessageBox::information(this, "Align Object With Border Pixels", errorMessage);
+   handleErrorCode("Align Object With Border Pixels", editor->alignObjectWithBorderPixels());
 }
 
 void MainWindow::advancedEdit(){
@@ -381,9 +393,7 @@ void MainWindow::advancedEdit(){
 }
 
 void MainWindow::layerChange(){
-   int layer = sender()->property("layer_num").toInt();
-
-   editor->setLayer(layer);
+   editor->setLayer(sender()->property("layer_num").toInt());
    redraw();
 }
 

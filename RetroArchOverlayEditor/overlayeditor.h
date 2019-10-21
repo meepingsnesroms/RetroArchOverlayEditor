@@ -7,42 +7,50 @@
 #include <QPainter>
 #include <QColor>
 
-#define NULL_BUTTON_COLOR QColor(0xFF, 0x00, 0x00, 0x77)
-#define NULL_JOYSTICK_COLOR QColor(0x00, 0x00, 0xFF, 0x77)
-#define OBJECT_RESIZE_ACTION_COLOR QColor(0xFF, 0xFF, 0x00, 0x77)
-
-enum{
-   OBJECT_BUTTON = 0,
-   OBJECT_JOYSTICK
-};
-
-typedef struct{
-   uint8_t type;//type
-   double  x;
-   double  y;
-   double  width;
-   double  height;
-   bool    r;//radial
-   int     layer;//layer, -1 for system objects
-   QString name;//button
-   QString imageName;//image name
-   QPixmap picture;//pixmap
-}overlay_object;
-
-typedef struct{
-   bool    rangeModExists;
-   bool    alphaModExists;
-   double  rangeMod;
-   double  alphaMod;
-   QString overlayImagePath;
-   QPixmap overlayImage;
-}overlay;
-
 class OverlayEditor{
+public:
+   const QColor NULL_BUTTON_COLOR = QColor(0xFF, 0x00, 0x00, 0x77);
+   const QColor NULL_JOYSTICK_COLOR = QColor(0x00, 0x00, 0xFF, 0x77);
+   const QColor OBJECT_RESIZE_ACTION_COLOR = QColor(0xFF, 0xFF, 0x00, 0x77);
+
+   const QString ERROR_NONE = "";
+   const QString ERROR_NOT_IMPLEMENTED = "Feature not implemented.";
+   const QString ERROR_NOT_POSSIBLE = "Cannot perform this action.";
+   const QString ERROR_INVALID_CHARS_USED = "Object names can only contain alphanumeric characters.";
+   //const QString ERROR_IMAGE_NOT_IN_OVERLAY_FOLDER = "Images used in the overlay must be in the same folder.";
+
+   enum{
+      OBJECT_BUTTON = 0,
+      OBJECT_JOYSTICK
+   };
+
+   typedef struct{
+      uint8_t type;
+      double  x;
+      double  y;
+      double  width;
+      double  height;
+      bool    circular;
+      int     layer;
+      QString name;//ID used by RetroArch to determine function
+      QString imageName;
+      QPixmap picture;
+   }overlay_object;
+
+   typedef struct{
+      bool    rangeModExists;
+      bool    alphaModExists;
+      double  rangeMod;
+      double  alphaMod;
+      QString overlayImagePath;
+      QPixmap overlayImage;
+   }overlay;
+
 private:
    QPainter* renderer;
    QPixmap*  framebuffer;
 
+   QString                  currentlyOpenOverlay;
    QVector<overlay>         layers;
    QVector<overlay_object>  objects;
    QVector<overlay_object*> selectedObjects;
@@ -59,7 +67,7 @@ private:
    bool hitboxSquare(double x1, double y1, double w1, double h1, double x2, double y2, double w2, double h2);
    bool touchedSelectedObject(double x, double y);
    void updateSelectedObjects(double x, double y, double w, double h, bool area);
-   void getCenterOfSelectedObjects(double* x, double* y);
+   const QString& getCenterOfSelectedObjects(double* x, double* y);
    void moveSelectedObjects(double x, double y);//in deltas, not absolute
    void render();
 
@@ -92,20 +100,19 @@ public:
    void mouseUp();
 
    //button configuration
-   void addButton();
-   void addJoystick();
-   QString getObjectName(){return selectedObjects.size() == 1 ? selectedObjects[0]->name : "";}
-   void setObjectName(const QString& name);
-   void setObjectImage(const QString& imagePath);
-   void getObjectsCoordinates(double* x, double* y){getCenterOfSelectedObjects(x, y);}
-   void setObjectsCoordinates(double x, double y);
-   void getObjectsSize(double* width, double* height);
+   void addObject(bool isJoystick);
+   QString getObjectName(){return selectedObjects.size() == 1 ? selectedObjects[0]->name : ERROR_NOT_POSSIBLE;}
+   const QString& setObjectName(const QString& name);
+   const QString& setObjectImage(const QString& imagePath);
+   const QString& getObjectsCoordinates(double* x, double* y){return getCenterOfSelectedObjects(x, y);}
+   const QString& setObjectsCoordinates(double x, double y);
+   const QString& getObjectsSize(double* width, double* height);
    void setObjectsSize(double width, double height);
    void remove();
    void resize(double w, double h);//multiplier, 1.0 = stay the same
-   void resizeGroupSpacing(double w, double h);//multiplier, 1.0 = stay the same
-   QString alignObjectWithBorderPixels();
-   void setCollisionType(bool r);
+   const QString& resizeGroupSpacing(double w, double h);//multiplier, 1.0 = stay the same
+   const QString& alignObjectWithBorderPixels();
+   void setCollisionType(bool circular);
 };
 
 #endif

@@ -4,6 +4,10 @@
 #include <QtGlobal>
 #include <QString>
 #include <QPixmap>
+#include <QPainter>
+#include <QVector>
+#include <QColor>
+#include <QRect>
 #include <QFile>
 #include <QFileInfo>
 
@@ -71,10 +75,11 @@ void OverlayEditor::updateSelectedObjects(double x, double y, double w, double h
    }
 }
 
-void OverlayEditor::getCenterOfSelectedObjects(double* x, double* y){
+const QString& OverlayEditor::getCenterOfSelectedObjects(double* x, double* y){
    if(selectedObjects.size() == 1){
       *x = selectedObjects[0]->x + selectedObjects[0]->width / 2.0;
       *y = selectedObjects[0]->y + selectedObjects[0]->height / 2.0;
+      return ERROR_NONE;
    }
    else if(selectedObjects.size() > 1){
       double groupCenterX = 0.0;
@@ -89,11 +94,10 @@ void OverlayEditor::getCenterOfSelectedObjects(double* x, double* y){
 
       *x = groupCenterX;
       *y = groupCenterY;
+      return ERROR_NONE;
    }
-   else{
-      *x = 0.5;
-      *y = 0.5;
-   }
+
+   return ERROR_NOT_POSSIBLE;
 }
 
 void OverlayEditor::moveSelectedObjects(double x, double y){
@@ -136,7 +140,7 @@ void OverlayEditor::render(){
       //draw green transparent squares around selected objects
       renderer->setBrush(QColor("Green"));
       for(int index = 0; index < selectedObjects.size(); index++){
-         if(selectedObjects[index]->r)
+         if(selectedObjects[index]->circular)
             renderer->drawEllipse(QRect(selectedObjects[index]->x * (framebuffer->width() - 1), selectedObjects[index]->y * (framebuffer->height() - 1), selectedObjects[index]->width * framebuffer->width(), selectedObjects[index]->height * framebuffer->height()));
          else
             renderer->drawRect(QRect(selectedObjects[index]->x * (framebuffer->width() - 1), selectedObjects[index]->y * (framebuffer->height() - 1), selectedObjects[index]->width * framebuffer->width(), selectedObjects[index]->height * framebuffer->height()));
@@ -145,6 +149,7 @@ void OverlayEditor::render(){
 }
 
 void OverlayEditor::reset(){
+   currentlyOpenOverlay = "";
    layers.clear();
    layers += {false, false, 0.0, 0.0, "", QPixmap()};//new layer 0 has no params
    objects.clear();
@@ -188,7 +193,7 @@ void OverlayEditor::saveToFile(const QString& path){
       for(int object = 0; object < objects.size(); object++){
          if(objects[object].layer == currentOverlay){
             QString item = curOverlayStr + "_desc" + QString::number(object);
-            QString value = objects[object].name + "," + QString::number(objects[object].x + objects[object].width / 2.0) + "," + QString::number(objects[object].y + objects[object].height / 2.0) + "," + (objects[object].r ? "radial" : "rect") + "," + QString::number(objects[object].width / 2.0) + "," + QString::number(objects[object].height / 2.0);
+            QString value = objects[object].name + "," + QString::number(objects[object].x + objects[object].width / 2.0) + "," + QString::number(objects[object].y + objects[object].height / 2.0) + "," + (objects[object].circular ? "radial" : "rect") + "," + QString::number(objects[object].width / 2.0) + "," + QString::number(objects[object].height / 2.0);
 
             config_set_string(fileInput, item.toStdString().c_str(), value.toStdString().c_str());
             if(objects[object].imageName != "")
@@ -208,6 +213,7 @@ void OverlayEditor::saveToFile(const QString& path){
 void OverlayEditor::loadFromFile(const QString& path){
    config_file_t* fileInput = config_file_new(path.toStdString().c_str());
    int totalLayers = 0;
+   QVector<bool> divideByScreenSize;
 
    //only continue if file existed
    if(!fileInput)
@@ -215,16 +221,22 @@ void OverlayEditor::loadFromFile(const QString& path){
 
    //start with default state
    reset();
+   currentlyOpenOverlay = path;
 
    //get layer count
    config_get_int(fileInput, "overlays", &totalLayers);
    layers.resize(totalLayers);
+   divideByScreenSize.resize(totalLayers);
 
    //save layer parameters for later
    for(int currentOverlay = 0; currentOverlay < totalLayers; currentOverlay++){
       QString item = "overlay" + QString::number(currentOverlay);
       char* layerImagePtr = "";
       QString layerImage;
+
+      //check if items need to be divided by the screen size for the current overlay
+      divideByScreenSize[currentOverlay] = true;
+      config_get_bool(fileInput, (item + "_normalized").toStdString().c_str(), &divideByScreenSize[currentOverlay]);
 
       layers[currentOverlay].rangeModExists = config_get_double(fileInput, (item + "_range_mod").toStdString().c_str(), &layers[currentOverlay].rangeMod);
       layers[currentOverlay].alphaModExists = config_get_double(fileInput, (item + "_alpha_mod").toStdString().c_str(), &layers[currentOverlay].alphaMod);
@@ -268,11 +280,11 @@ void OverlayEditor::loadFromFile(const QString& path){
 
          newObject.type = isJoystick ? OBJECT_JOYSTICK : OBJECT_BUTTON;
          newObject.name = arrayItems[0];
-         newObject.x = arrayItems[1].toDouble();
-         newObject.y = arrayItems[2].toDouble();
-         newObject.r = arrayItems[3] == "radial";
-         newObject.width = arrayItems[4].toDouble();
-         newObject.height = arrayItems[5].toDouble();
+         newObject.x = divideByScreenSize[currentOverlay] ? arrayItems[1].toDouble() / framebuffer->width() : arrayItems[1].toDouble();
+         newObject.y = divideByScreenSize[currentOverlay] ? arrayItems[2].toDouble() / framebuffer->height() : arrayItems[2].toDouble();
+         newObject.circular = arrayItems[3] == "radial";
+         newObject.width = divideByScreenSize[currentOverlay] ? arrayItems[4].toDouble() / framebuffer->width() : arrayItems[4].toDouble();
+         newObject.height = divideByScreenSize[currentOverlay] ? arrayItems[5].toDouble() / framebuffer->height() : arrayItems[5].toDouble();
          newObject.imageName = imageName;
          newObject.picture = imageName != "" ? QPixmap(QFileInfo(path).path() + "/" + newObject.imageName) : colorAsImage(isJoystick ? NULL_JOYSTICK_COLOR : NULL_BUTTON_COLOR);
          newObject.layer = currentOverlay;
@@ -416,64 +428,62 @@ void OverlayEditor::mouseUp(){
    render();
 }
 
-void OverlayEditor::addButton(){
+void OverlayEditor::addObject(bool isJoystick){
    overlay_object newObject;
 
-   newObject.type = OBJECT_BUTTON;
+   newObject.type = isJoystick ? OBJECT_JOYSTICK : OBJECT_BUTTON;
    newObject.x = 0.5 - 0.05;
    newObject.y = 0.5 - 0.05;
    newObject.width = 0.1;
    newObject.height = 0.1;
    newObject.layer = currentLayer;
-   newObject.name = "";
+   newObject.name = "nul";
    newObject.imageName = "";
-   newObject.picture = colorAsImage(NULL_BUTTON_COLOR);
+   newObject.picture = isJoystick ? colorAsImage(NULL_JOYSTICK_COLOR) : colorAsImage(NULL_BUTTON_COLOR);
 
    objects += newObject;
 
    render();
 }
 
-void OverlayEditor::addJoystick(){
-   overlay_object newObject;
+const QString& OverlayEditor::setObjectName(const QString& name){
+   if(selectedObjects.size() == 1){
+      for(int index = 0; index < name.size(); index++)
+         if(!name[index].isLetter() && !name[index].isDigit() && !(name[index] == '_') && !(name[index] == '|'))
+            return ERROR_INVALID_CHARS_USED;
 
-   newObject.type = OBJECT_JOYSTICK;
-   newObject.x = 0.5 - 0.05;
-   newObject.y = 0.5 - 0.05;
-   newObject.width = 0.1;
-   newObject.height = 0.1;
-   newObject.layer = currentLayer;
-   newObject.name = "";
-   newObject.imageName = "";
-   newObject.picture = colorAsImage(NULL_JOYSTICK_COLOR);
-
-   objects += newObject;
-
-   render();
-}
-
-void OverlayEditor::setObjectName(const QString& name){
-   if(selectedObjects.size() == 1)
       selectedObjects[0]->name = name;
+      return ERROR_NONE;
+   }
+
+   return ERROR_NOT_POSSIBLE;
 }
 
-void OverlayEditor::setObjectImage(const QString& imagePath){
+const QString& OverlayEditor::setObjectImage(const QString& imagePath){
    if(selectedObjects.size() == 1){
       QPixmap image(imagePath);
 
       if(!image.isNull()){
          selectedObjects[0]->imageName = QFileInfo(imagePath).fileName();
          selectedObjects[0]->picture = image;
-         render();
       }
+      else{
+         selectedObjects[0]->imageName = "";
+         selectedObjects[0]->picture =  selectedObjects[0]->type == OBJECT_JOYSTICK  ? colorAsImage(NULL_JOYSTICK_COLOR) : colorAsImage(NULL_BUTTON_COLOR);
+      }
+      render();
+      return ERROR_NONE;
    }
+
+   return ERROR_NOT_POSSIBLE;
 }
 
-void OverlayEditor::setObjectsCoordinates(double x, double y){
+const QString& OverlayEditor::setObjectsCoordinates(double x, double y){
    if(selectedObjects.size() == 1){
       selectedObjects[0]->x = x - selectedObjects[0]->width / 2.0;
       selectedObjects[0]->y = y - selectedObjects[0]->height / 2.0;
       render();
+      return ERROR_NONE;
    }
    else if(selectedObjects.size() > 1){
       double groupCenterX;
@@ -486,21 +496,24 @@ void OverlayEditor::setObjectsCoordinates(double x, double y){
          selectedObjects[index]->y += y - groupCenterY;
       }
       render();
+      return ERROR_NONE;
    }
+
+   return ERROR_NOT_POSSIBLE;
 }
 
-void OverlayEditor::getObjectsSize(double* width, double* height){
+const QString& OverlayEditor::getObjectsSize(double* width, double* height){
    if(selectedObjects.size() == 1){
       *width = selectedObjects[0]->width;
       *height = selectedObjects[0]->height;
+      return ERROR_NONE;
    }
    else if(selectedObjects.size() > 1){
       //TODO: this will be way complicated
+      return ERROR_NOT_IMPLEMENTED;
    }
-   else{
-      *width = 0.0;
-      *height = 0.0;
-   }
+
+   return ERROR_NOT_POSSIBLE;
 }
 
 void OverlayEditor::setObjectsSize(double width, double height){
@@ -543,7 +556,7 @@ void OverlayEditor::resize(double w, double h){
    render();
 }
 
-void OverlayEditor::resizeGroupSpacing(double w, double h){
+const QString& OverlayEditor::resizeGroupSpacing(double w, double h){
    if(selectedObjects.size() > 1){
       double groupCenterX;
       double groupCenterY;
@@ -559,10 +572,13 @@ void OverlayEditor::resizeGroupSpacing(double w, double h){
       }
 
       render();
+      return ERROR_NONE;
    }
+
+   return ERROR_NOT_POSSIBLE;
 }
 
-QString OverlayEditor::alignObjectWithBorderPixels(){
+const QString& OverlayEditor::alignObjectWithBorderPixels(){
    if(selectedObjects.size() == 1){
       //TODO: make this work
       //first find matching top left pixel
@@ -578,12 +594,12 @@ QString OverlayEditor::alignObjectWithBorderPixels(){
       render();
    }
 
-   return "";
+   return ERROR_NOT_POSSIBLE;
 }
 
-void OverlayEditor::setCollisionType(bool r){
+void OverlayEditor::setCollisionType(bool circular){
    for(int index = 0; index < selectedObjects.size(); index++)
-      selectedObjects[index]->r = r;
+      selectedObjects[index]->circular = circular;
 
    render();
 }

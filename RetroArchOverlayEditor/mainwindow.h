@@ -26,6 +26,7 @@ private:
 private slots:
    bool eventFilter(QObject* object, QEvent* event);
    void updateDisplay();
+   void handleErrorCode(const QString& function, const QString& errorCode);
 
    //file menu
    void new_DERESERVED();
@@ -45,6 +46,7 @@ private slots:
    void deleteObjects();
    void setObjectName();
    void setObjectImage();
+   void removeObjectImage();
    void setCircularObjects();
    void setSquareObjects();
    void setObjectsCoordinates();
