@@ -16,8 +16,9 @@ public:
    const QString ERROR_NONE = "";
    const QString ERROR_NOT_IMPLEMENTED = "Feature not implemented.";
    const QString ERROR_NOT_POSSIBLE = "Cannot perform this action.";
-   const QString ERROR_INVALID_CHARS_USED = "Object names can only contain alphanumeric characters.";
-   //const QString ERROR_IMAGE_NOT_IN_OVERLAY_FOLDER = "Images used in the overlay must be in the same folder.";
+   const QString ERROR_INVALID_CHARS_USED = "Object names can only contain A<->Z, a<->z, 1<->9, _, and |.";
+   const QString ERROR_FILE_DOESNT_EXIST = "That file doesn't exist.";
+   const QString ERROR_CANT_SAVE_FILE = "Can't save file.";
 
    enum{
       OBJECT_BUTTON = 0,
@@ -47,6 +48,7 @@ public:
    }overlay;
 
 private:
+   QPixmap   background;
    QPainter* renderer;
    QPixmap*  framebuffer;
 
@@ -54,7 +56,6 @@ private:
    QVector<overlay>         layers;
    QVector<overlay_object>  objects;
    QVector<overlay_object*> selectedObjects;
-   QPixmap                  background;
    int                      currentLayer;
    bool                     mouseActive;
    double                   mouseDownX;
@@ -77,8 +78,8 @@ public:
 
    //environment configuration
    void reset();
-   void saveToFile(const QString& path);
-   void loadFromFile(const QString& path);
+   const QString& saveToFile(const QString& path);
+   const QString& loadFromFile(const QString& path);
    void setCanvasSize(int width, int height);
    void getCanvasSize(int* width, int* height){*width = framebuffer->width(); *height = framebuffer->height();}
    void setBackground(const QString& imagePath);

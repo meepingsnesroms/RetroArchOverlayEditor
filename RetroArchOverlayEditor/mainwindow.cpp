@@ -58,6 +58,11 @@ MainWindow::MainWindow(QWidget* parent) :
    connect(setBackgroundAction, &QAction::triggered, this, &MainWindow::setBackground);
    ui->menuActions->addAction(setBackgroundAction);
 
+   QAction* removeBackgroundAction = new QAction("Remove Background", this);
+   removeBackgroundAction->setStatusTip("Remove the current background");
+   connect(removeBackgroundAction, &QAction::triggered, this, &MainWindow::removeBackground);
+   ui->menuActions->addAction(removeBackgroundAction);
+
    QAction* setLayerImageAction = new QAction("Set Layer Image", this);
    setLayerImageAction->setStatusTip("Set layer image for overlay");
    connect(setLayerImageAction, &QAction::triggered, this, &MainWindow::setLayerImage);
@@ -199,7 +204,7 @@ void MainWindow::updateDisplay(){
 }
 
 void MainWindow::handleErrorCode(const QString& function, const QString& errorCode){
-   if(errorCode != "")
+   if(!errorCode.isEmpty())
       QMessageBox::information(this, function, errorCode);
 }
 
@@ -212,21 +217,21 @@ void MainWindow::new_DERESERVED(){
 void MainWindow::open(){
    QString overlay = QFileDialog::getOpenFileName(this, "Select File", QDir::root().path(), "Overlay (*.cfg)");
 
-   if(overlay != ""){
-      editor->loadFromFile(overlay);
+   if(!overlay.isEmpty()){
+      handleErrorCode("Load Overlay", editor->loadFromFile(overlay));
       redraw();
    }
 }
 
 void MainWindow::save(){
-   editor->saveToFile(currentOpenFile);
+   handleErrorCode("Save Overlay", editor->saveToFile(currentOpenFile));
 }
 
 void MainWindow::saveAs(){
    QString overlay = QFileDialog::getSaveFileName(this, "Save File", QDir::root().path(), "Overlay (*.cfg)");
 
-   if(overlay != "")
-      editor->saveToFile(overlay);
+   if(!overlay.isEmpty())
+     handleErrorCode("Save Overlay",  editor->saveToFile(overlay));
 }
 
 void MainWindow::setCanvasSize(){
@@ -261,14 +266,18 @@ void MainWindow::setCanvasSize(){
 void MainWindow::setBackground(){
    QString image = QFileDialog::getOpenFileName(this, "Choose Background Image", QDir::root().path(), "Image (*.png *.jpg *.jpeg *.bmp)");
 
-   if(image != "")
+   if(!image.isEmpty())
       editor->setBackground(image);
+}
+
+void MainWindow::removeBackground(){
+   editor->setBackground("");
 }
 
 void MainWindow::setLayerImage(){
    QString image = QFileDialog::getOpenFileName(this, "Choose Layer Image", QDir::root().path(), "Image (*.png *.jpg *.jpeg *.bmp)");
 
-   if(image != "")
+   if(!image.isEmpty())
       editor->setLayerImage(image);
 }
 
@@ -312,7 +321,7 @@ void MainWindow::setObjectImage(){
    if(editor->singleObjectSelected()){
       QString image = QFileDialog::getOpenFileName(this, "Choose Object Image", QDir::root().path(), "Image (*.png *.jpg *.jpeg *.bmp)");
 
-      if(image != "")
+      if(!image.isEmpty())
          editor->setObjectImage(image);
    }
 }

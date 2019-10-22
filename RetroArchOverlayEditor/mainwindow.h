@@ -37,6 +37,7 @@ private slots:
    //action menu
    void setCanvasSize();
    void setBackground();
+   void removeBackground();
    void setLayerImage();
    void removeLayerImage();
    void addLayer();
