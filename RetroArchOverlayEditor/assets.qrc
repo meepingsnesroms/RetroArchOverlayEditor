@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>assets/retroarch.svg</file>
+        <file>assets/smallBunRounded.png</file>
+    </qresource>
+</RCC>

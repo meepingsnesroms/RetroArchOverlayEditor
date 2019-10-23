@@ -1,0 +1,18 @@
+overlay*_desc*_next_target is unsupported
+overlay*_desc*_pct is unsupported
+overlay*_full_screen = false is unsupported
+overlay*_rect is unsupported
+Cant change alpha channel and range mods
+Unknown varibles are deleted on save
+Object images should be saved to the directory with the overlay file on saveToFile
+
+Fixed:
+new layers have invalid object indexes preventing RetroArch from loading them
+Mouse is messed up after screen size change
+"Save" button dosent save
+Overlay backgrounds are not saved
+box-psx for iPad dosent load properly(all overlays where being treated as int based)
+Cant add or delete layers
+loadFromFile should convert int overlays to float overlays
+Cant move objects on layers other than 0
+Layer backgrounds are unimplemented
