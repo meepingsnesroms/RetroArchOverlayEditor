@@ -6,6 +6,7 @@
 #include <QInputDialog>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QFileInfo>
 
 
 #define DEFAULT_WIDTH 640
@@ -18,7 +19,6 @@ MainWindow::MainWindow(QWidget* parent) :
    ui->setupUi(this);
 
    editor = new OverlayEditor(DEFAULT_WIDTH, DEFAULT_HEIGHT);
-   currentOpenFile = "";
    sizeSliderLastPostion = 50;
    widthSliderLastPostion = 50;
    heightSliderLastPostion = 50;
@@ -161,14 +161,16 @@ MainWindow::~MainWindow(){
 }
 
 void MainWindow::redraw(){
-   //ui->menuLayer->actions().
+   QResizeEvent* resizeEvent = new QResizeEvent(ui->centralWidget->size(), ui->centralWidget->size());
+
+   //force update current size
+   QCoreApplication::postEvent(ui->centralWidget, resizeEvent);
 
    //redraw this UI, not the overlay editor
    ui->menuLayer->clear();
    for(int index = 0; index < editor->getTotalLayers(); index++){
       QAction* layerSelectAction = new QAction(QString::number(index), this);
       layerSelectAction->setProperty("layer_num", index);
-      //layerSelectAction->se
       layerSelectAction->setCheckable(index == editor->getLayer());
       layerSelectAction->setChecked(index == editor->getLayer());
       connect(layerSelectAction, &QAction::triggered, this, &MainWindow::layerChange);
@@ -224,11 +226,14 @@ void MainWindow::open(){
 }
 
 void MainWindow::save(){
-   handleErrorCode("Save Overlay", editor->saveToFile(currentOpenFile));
+   QString currentOverlay = editor->getCurrentlyOpenOverlay();
+
+   if(!currentOverlay.isEmpty())
+      handleErrorCode("Save Overlay", editor->saveToFile(currentOverlay));
 }
 
 void MainWindow::saveAs(){
-   QString overlay = QFileDialog::getSaveFileName(this, "Save File", QDir::root().path(), "Overlay (*.cfg)");
+   QString overlay = QFileDialog::getSaveFileName(this, "Save File", QFileInfo(editor->getCurrentlyOpenOverlay()).path(), "Overlay (*.cfg)");
 
    if(!overlay.isEmpty())
      handleErrorCode("Save Overlay",  editor->saveToFile(overlay));
@@ -257,6 +262,7 @@ void MainWindow::setCanvasSize(){
             refreshDisplay->stop();
             //dont render when canvas is null
             editor->setCanvasSize(width, height);
+            redraw();
             refreshDisplay->start();
          }
       }
@@ -264,7 +270,7 @@ void MainWindow::setCanvasSize(){
 }
 
 void MainWindow::setBackground(){
-   QString image = QFileDialog::getOpenFileName(this, "Choose Background Image", QDir::root().path(), "Image (*.png *.jpg *.jpeg *.bmp)");
+   QString image = QFileDialog::getOpenFileName(this, "Choose Background Image", QFileInfo(editor->getCurrentlyOpenOverlay()).path(), "Image (*.png *.jpg *.jpeg *.bmp)");
 
    if(!image.isEmpty())
       editor->setBackground(image);
@@ -275,7 +281,7 @@ void MainWindow::removeBackground(){
 }
 
 void MainWindow::setLayerImage(){
-   QString image = QFileDialog::getOpenFileName(this, "Choose Layer Image", QDir::root().path(), "Image (*.png *.jpg *.jpeg *.bmp)");
+   QString image = QFileDialog::getOpenFileName(this, "Choose Layer Image", QFileInfo(editor->getCurrentlyOpenOverlay()).path(), "Image (*.png *.jpg *.jpeg *.bmp)");
 
    if(!image.isEmpty())
       editor->setLayerImage(image);
@@ -319,7 +325,7 @@ void MainWindow::setObjectName(){
 
 void MainWindow::setObjectImage(){
    if(editor->singleObjectSelected()){
-      QString image = QFileDialog::getOpenFileName(this, "Choose Object Image", QDir::root().path(), "Image (*.png *.jpg *.jpeg *.bmp)");
+      QString image = QFileDialog::getOpenFileName(this, "Choose Object Image", QFileInfo(editor->getCurrentlyOpenOverlay()).path(), "Image (*.png *.jpg *.jpeg *.bmp)");
 
       if(!image.isEmpty())
          editor->setObjectImage(image);

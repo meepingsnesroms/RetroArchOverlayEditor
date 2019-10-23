@@ -78,6 +78,7 @@ public:
 
    //environment configuration
    void reset();
+   QString getCurrentlyOpenOverlay(){return currentlyOpenOverlay;}
    const QString& saveToFile(const QString& path);
    const QString& loadFromFile(const QString& path);
    void setCanvasSize(int width, int height);

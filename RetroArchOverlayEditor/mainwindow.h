@@ -73,7 +73,6 @@ private slots:
 
 private:
    Ui::MainWindow* ui;
-   QString         currentOpenFile;
    int             sizeSliderLastPostion;
    int             widthSliderLastPostion;
    int             heightSliderLastPostion;

@@ -8,7 +8,6 @@
 #include <QVector>
 #include <QColor>
 #include <QRect>
-#include <QFile>
 #include <QFileInfo>
 
 //libretro headers
@@ -164,8 +163,13 @@ void OverlayEditor::reset(){
 }
 
 const QString& OverlayEditor::saveToFile(const QString& path){
-   config_file_t* fileInput = config_file_new(NULL);
+   config_file_t* fileInput;
    bool saveWorked;
+
+   if(path.isEmpty())
+      return ERROR_CANT_SAVE_FILE;
+
+   fileInput = config_file_new(NULL);
 
    //set layer count
    config_set_int(fileInput, "overlays", layers.size());
@@ -388,7 +392,7 @@ void OverlayEditor::setLayerImage(const QString& imagePath){
    }
    else{
       //set layer image
-      layers[currentLayer].overlayImagePath = imagePath;
+      layers[currentLayer].overlayImagePath = QFileInfo(imagePath).fileName();
       layers[currentLayer].overlayImage = QPixmap(imagePath);
    }
 
