@@ -197,7 +197,7 @@ const QString& OverlayEditor::saveToFile(const QString& path){
 
       for(int object = 0; object < objects.size(); object++){
          if(objects[object].layer == currentOverlay){
-            QString item = curOverlayStr + "_desc" + QString::number(object);
+            QString item = curOverlayStr + "_desc" + QString::number(layerButtons);
             QString value = objects[object].name + "," + QString::number(objects[object].x + objects[object].width / 2.0) + "," + QString::number(objects[object].y + objects[object].height / 2.0) + "," + (objects[object].circular ? "radial" : "rect") + "," + QString::number(objects[object].width / 2.0) + "," + QString::number(objects[object].height / 2.0);
 
             config_set_string(fileInput, item.toStdString().c_str(), value.toStdString().c_str());
