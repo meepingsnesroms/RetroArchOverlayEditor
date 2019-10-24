@@ -153,7 +153,7 @@ void OverlayEditor::render(){
 void OverlayEditor::reset(){
    currentlyOpenOverlay = "";
    layers.clear();
-   layers += {false, false, 0.0, 0.0, "", QPixmap()};//new layer 0 has no params
+   layers += {false, false, false, 0.0, 0.0, QPixmap()};//new layer 0 has no params
    objects.clear();
    selectedObjects.clear();
    mouseActive = false;
@@ -188,8 +188,12 @@ const QString& OverlayEditor::saveToFile(const QString& path){
          config_set_double(fileInput, (item + "_range_mod").toStdString().c_str(), layers[currentOverlay].rangeMod);
       if(layers[currentOverlay].alphaModExists)
          config_set_double(fileInput, (item + "_alpha_mod").toStdString().c_str(), layers[currentOverlay].alphaMod);
-      if(!layers[currentOverlay].overlayImagePath.isEmpty())
-         config_set_string(fileInput, (item + "_overlay").toStdString().c_str(), layers[currentOverlay].overlayImagePath.toStdString().c_str());
+      if(layers[currentOverlay].overlayImageExists){
+         config_set_string(fileInput, (item + "_overlay").toStdString().c_str(), (item + ".png").toStdString().c_str());
+
+         //save out images, this is needed because images may not be in the same directory or the right format
+         layers[currentOverlay].overlayImage.save(QFileInfo(path).path() + "/" + item + ".png", "png");
+      }
    }
 
    //add objects
@@ -203,9 +207,14 @@ const QString& OverlayEditor::saveToFile(const QString& path){
             QString value = objects[object].name + "," + QString::number(objects[object].x + objects[object].width / 2.0) + "," + QString::number(objects[object].y + objects[object].height / 2.0) + "," + (objects[object].circular ? "radial" : "rect") + "," + QString::number(objects[object].width / 2.0) + "," + QString::number(objects[object].height / 2.0);
 
             config_set_string(fileInput, item.toStdString().c_str(), value.toStdString().c_str());
-            config_set_bool(fileInput, (item + "_movable").toStdString().c_str(), objects[object].type == OBJECT_JOYSTICK);
-            if(!objects[object].imageName.isEmpty())
-               config_set_string(fileInput, (item + "_overlay").toStdString().c_str(), objects[object].imageName.toStdString().c_str());
+            if(objects[object].type == OBJECT_JOYSTICK)
+               config_set_bool(fileInput, (item + "_movable").toStdString().c_str(), true);
+            if(objects[object].hasPicture){
+               config_set_string(fileInput, (item + "_overlay").toStdString().c_str(), (item + ".png").toStdString().c_str());
+
+               //save out images, this is needed because images may not be in the same directory or the right format
+               objects[object].picture.save(QFileInfo(path).path() + "/" + item + ".png", "png");
+            }
 
             //handle special actions
             if(objects[object].name == "overlay_next")
@@ -269,9 +278,13 @@ const QString& OverlayEditor::loadFromFile(const QString& path){
 
       layers[currentOverlay].rangeModExists = config_get_double(fileInput, (item + "_range_mod").toStdString().c_str(), &layers[currentOverlay].rangeMod);
       layers[currentOverlay].alphaModExists = config_get_double(fileInput, (item + "_alpha_mod").toStdString().c_str(), &layers[currentOverlay].alphaMod);
-      layers[currentOverlay].overlayImagePath = layerImage;
-      if(!layerImage.isEmpty())
+      if(!layerImage.isEmpty()){
+         layers[currentOverlay].overlayImageExists = true;
          layers[currentOverlay].overlayImage = QPixmap(QFileInfo(path).path() + "/" + layerImage);
+      }
+      else{
+         layers[currentOverlay].overlayImageExists = false;
+      }
    }
 
    //add objects
@@ -312,8 +325,8 @@ const QString& OverlayEditor::loadFromFile(const QString& path){
          newObject.circular = arrayItems[3] == "radial";
          newObject.width = !layerIsFloatBased[currentOverlay] ? arrayItems[4].toDouble() / layers[currentOverlay].overlayImage.width() : arrayItems[4].toDouble();
          newObject.height = !layerIsFloatBased[currentOverlay] ? arrayItems[5].toDouble() / layers[currentOverlay].overlayImage.height() : arrayItems[5].toDouble();
-         newObject.imageName = imageName;
-         newObject.picture = !imageName.isEmpty() ? QPixmap(QFileInfo(path).path() + "/" + newObject.imageName) : colorAsImage(isJoystick ? NULL_JOYSTICK_COLOR : NULL_BUTTON_COLOR);
+         newObject.hasPicture = !imageName.isEmpty();
+         newObject.picture = !imageName.isEmpty() ? QPixmap(QFileInfo(path).path() + "/" + imageName) : colorAsImage(isJoystick ? NULL_JOYSTICK_COLOR : NULL_BUTTON_COLOR);
          newObject.layer = currentOverlay;
 
          //handle special actions
@@ -426,7 +439,7 @@ void OverlayEditor::setLayer(int layer){
 }
 
 void OverlayEditor::newLayer(){
-   layers += {false, false, 0.0, 0.0, "", QPixmap()};
+   layers += {false, false, false, 0.0, 0.0, QPixmap()};
 }
 
 void OverlayEditor::removeLayer(int layer){
@@ -467,12 +480,12 @@ void OverlayEditor::removeLayer(int layer){
 void OverlayEditor::setLayerImage(const QString& imagePath){
    if(imagePath.isEmpty()){
       //remove background
-      layers[currentLayer].overlayImagePath = "";
+      layers[currentLayer].overlayImageExists = false;
       layers[currentLayer].overlayImage = QPixmap();
    }
    else{
       //set layer image
-      layers[currentLayer].overlayImagePath = QFileInfo(imagePath).fileName();
+      layers[currentLayer].overlayImageExists = true;
       layers[currentLayer].overlayImage = QPixmap(imagePath);
    }
 
@@ -521,7 +534,7 @@ void OverlayEditor::addObject(bool isJoystick){
    newObject.layer = currentLayer;
    newObject.name = "nul";
    newObject.specialAction = "";
-   newObject.imageName = "";
+   newObject.hasPicture = false;
    newObject.picture = isJoystick ? colorAsImage(NULL_JOYSTICK_COLOR) : colorAsImage(NULL_BUTTON_COLOR);
 
    objects += newObject;
@@ -545,11 +558,11 @@ const QString& OverlayEditor::setObjectName(const QString& name){
 const QString& OverlayEditor::setObjectImage(const QString& imagePath){
    if(selectedObjects.size() == 1){
       if(imagePath.isEmpty()){
-         selectedObjects[0]->imageName = "";
+         selectedObjects[0]->hasPicture = false;
          selectedObjects[0]->picture = selectedObjects[0]->type == OBJECT_JOYSTICK  ? colorAsImage(NULL_JOYSTICK_COLOR) : colorAsImage(NULL_BUTTON_COLOR);
       }
       else{
-         selectedObjects[0]->imageName = QFileInfo(imagePath).fileName();
+         selectedObjects[0]->hasPicture = true;
          selectedObjects[0]->picture = QPixmap(imagePath);
       }
       render();

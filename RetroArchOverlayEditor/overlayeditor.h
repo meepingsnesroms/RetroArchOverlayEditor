@@ -35,16 +35,16 @@ public:
       int     layer;
       QString name;//ID used by RetroArch to determine function
       QString specialAction;
-      QString imageName;
+      bool    hasPicture;
       QPixmap picture;
    }overlay_object;
 
    typedef struct{
       bool    rangeModExists;
       bool    alphaModExists;
+      bool    overlayImageExists;
       double  rangeMod;
       double  alphaMod;
-      QString overlayImagePath;
       QPixmap overlayImage;
    }overlay;
 
