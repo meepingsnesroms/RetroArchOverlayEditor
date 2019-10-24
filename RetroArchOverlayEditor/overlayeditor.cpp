@@ -201,8 +201,13 @@ const QString& OverlayEditor::saveToFile(const QString& path){
             QString value = objects[object].name + "," + QString::number(objects[object].x + objects[object].width / 2.0) + "," + QString::number(objects[object].y + objects[object].height / 2.0) + "," + (objects[object].circular ? "radial" : "rect") + "," + QString::number(objects[object].width / 2.0) + "," + QString::number(objects[object].height / 2.0);
 
             config_set_string(fileInput, item.toStdString().c_str(), value.toStdString().c_str());
+            config_set_bool(fileInput, (item + "_movable").toStdString().c_str(), objects[object].type == OBJECT_JOYSTICK);
             if(!objects[object].imageName.isEmpty())
                config_set_string(fileInput, (item + "_overlay").toStdString().c_str(), objects[object].imageName.toStdString().c_str());
+
+            //handle special actions
+            if(objects[object].name == "overlay_next")
+               config_set_string(fileInput, (item + "_next_target").toStdString().c_str(), objects[object].specialAction.toStdString().c_str());
 
             layerButtons++;
          }
@@ -223,6 +228,7 @@ const QString& OverlayEditor::loadFromFile(const QString& path){
    config_file_t* fileInput = config_file_new(path.toStdString().c_str());
    int totalLayers = 0;
    QVector<bool> layerIsFloatBased;
+   QVector<QString> layerNames;
 
    //only continue if file existed
    if(!fileInput)
@@ -236,21 +242,31 @@ const QString& OverlayEditor::loadFromFile(const QString& path){
    config_get_int(fileInput, "overlays", &totalLayers);
    layers.resize(totalLayers);
    layerIsFloatBased.resize(totalLayers);
+   layerNames.resize(totalLayers);
 
    //save layer parameters for later
    for(int currentOverlay = 0; currentOverlay < totalLayers; currentOverlay++){
       QString item = "overlay" + QString::number(currentOverlay);
       char* layerImagePtr = "";
       QString layerImage;
+      char* layerNamePtr = "";
 
       //check if items need to be divided by the image size for the current overlay
       layerIsFloatBased[currentOverlay] = false;
       config_get_bool(fileInput, (item + "_normalized").toStdString().c_str(), &layerIsFloatBased[currentOverlay]);
 
-      layers[currentOverlay].rangeModExists = config_get_double(fileInput, (item + "_range_mod").toStdString().c_str(), &layers[currentOverlay].rangeMod);
-      layers[currentOverlay].alphaModExists = config_get_double(fileInput, (item + "_alpha_mod").toStdString().c_str(), &layers[currentOverlay].alphaMod);
+      //get layer image
       config_get_string(fileInput, (item + "_overlay").toStdString().c_str(), &layerImagePtr);
       layerImage = layerImagePtr;
+      free(layerImagePtr);
+
+      //get overlay name
+      config_get_string(fileInput, (item + "_name").toStdString().c_str(), &layerNamePtr);
+      layerNames[currentOverlay] = layerNamePtr;
+      free(layerNamePtr);
+
+      layers[currentOverlay].rangeModExists = config_get_double(fileInput, (item + "_range_mod").toStdString().c_str(), &layers[currentOverlay].rangeMod);
+      layers[currentOverlay].alphaModExists = config_get_double(fileInput, (item + "_alpha_mod").toStdString().c_str(), &layers[currentOverlay].alphaMod);
       layers[currentOverlay].overlayImagePath = layerImage;
       if(!layerImage.isEmpty())
          layers[currentOverlay].overlayImage = QPixmap(QFileInfo(path).path() + "/" + layerImage);
@@ -266,7 +282,7 @@ const QString& OverlayEditor::loadFromFile(const QString& path){
       for(int object = 0; object < totalButtons; object++){
          overlay_object newObject;
          QString item = curOverlayStr + "_desc" + QString::number(object);
-         char overlayString[256];
+         char overlayString[2000];
          bool success = config_get_array(fileInput, item.toStdString().c_str(), overlayString, sizeof(overlayString));
          QStringList arrayItems;
          char* imageNamePtr = "";
@@ -279,11 +295,11 @@ const QString& OverlayEditor::loadFromFile(const QString& path){
 
          //get image name
          config_get_string(fileInput, (item + "_overlay").toStdString().c_str(), &imageNamePtr);
+         imageName = imageNamePtr;
+         free(imageNamePtr);
 
          //get object type
          config_get_bool(fileInput, (item + "_movable").toStdString().c_str(), &isJoystick);
-
-         imageName = imageNamePtr;
 
          arrayItems = QString(overlayString).split(",");
 
@@ -297,6 +313,37 @@ const QString& OverlayEditor::loadFromFile(const QString& path){
          newObject.imageName = imageName;
          newObject.picture = !imageName.isEmpty() ? QPixmap(QFileInfo(path).path() + "/" + newObject.imageName) : colorAsImage(isJoystick ? NULL_JOYSTICK_COLOR : NULL_BUTTON_COLOR);
          newObject.layer = currentOverlay;
+
+         //handle special actions
+         if(newObject.name == "overlay_next"){
+            char* specialActionPtr = "";
+            QString specialAction;
+
+            config_get_string(fileInput, (item + "_next_target").toStdString().c_str(), &specialActionPtr);
+            specialAction = specialActionPtr;
+            free(specialActionPtr);
+
+            if(specialAction.isEmpty()){
+               newObject.specialAction = "overlay" + QString::number((currentOverlay + 1) % totalLayers);
+            }
+            else{
+               for(int currentOverlay = 0; currentOverlay < totalLayers; currentOverlay++){
+                  if(specialAction == layerNames[currentOverlay]){
+                     newObject.specialAction = "overlay" + QString::number(currentOverlay);
+                     goto resolved;
+                  }
+               }
+
+               //no object with that name, just go to next overlay in order
+               newObject.specialAction = "overlay" + QString::number((currentOverlay + 1) % totalLayers);
+
+               resolved:
+               true;//goto wouldnt compile without a statement after
+            }
+         }
+         else{
+            newObject.specialAction = "";
+         }
 
          //recalculate size to top left corner instead of radius from center
          newObject.x -= newObject.width;
@@ -440,6 +487,7 @@ void OverlayEditor::addObject(bool isJoystick){
    newObject.height = 0.1;
    newObject.layer = currentLayer;
    newObject.name = "nul";
+   newObject.specialAction = "";
    newObject.imageName = "";
    newObject.picture = isJoystick ? colorAsImage(NULL_JOYSTICK_COLOR) : colorAsImage(NULL_BUTTON_COLOR);
 

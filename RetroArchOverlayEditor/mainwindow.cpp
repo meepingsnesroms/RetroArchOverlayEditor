@@ -7,6 +7,8 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QFileInfo>
+#include <QFile>
+#include <QDir>
 
 
 #define DEFAULT_WIDTH 640
@@ -22,6 +24,7 @@ MainWindow::MainWindow(QWidget* parent) :
    sizeSliderLastPostion = 50;
    widthSliderLastPostion = 50;
    heightSliderLastPostion = 50;
+   spreadSliderLastPostion = 50;
    refreshDisplay = new QTimer(this);
 
    //resize framebuffer properly
@@ -138,7 +141,7 @@ MainWindow::MainWindow(QWidget* parent) :
    connect(alignObjectWithBorderPixelsAction, &QAction::triggered, this, &MainWindow::alignObjectWithBorderPixels);
    ui->menuActions->addAction(alignObjectWithBorderPixelsAction);
 
-   QAction* advancedEditAction = new QAction("Advanced Edit (UNIMPLEMENTED)", this);
+   QAction* advancedEditAction = new QAction("Advanced Edit", this);
    advancedEditAction->setStatusTip("Directly edit overlay object code");
    connect(advancedEditAction, &QAction::triggered, this, &MainWindow::advancedEdit);
    ui->menuActions->addAction(advancedEditAction);
@@ -404,7 +407,17 @@ void MainWindow::alignObjectWithBorderPixels(){
 }
 
 void MainWindow::advancedEdit(){
+   /*
+   //QDir::temp().path();
+   //QDir::root().path();
    //TODO: need to save file to temp, load it in an editor and when its closed reload from temp
+   handleErrorCode("Advanced Edit", editor->saveToFile(QDir::temp().path() + "/" + "retroarchOverlayEditorTempFile.cfg"));
+   //QFile(QDir::temp().path() + "/" + "retroarchOverlayEditorTempFile.cfg");
+   overlayTextEditor.ui->overlayMetadata->setPlainText("NomiKoto");
+   overlayTextEditor.exec();
+   overlayTextEditor.ui->overlayMetadata->toPlainText();
+   handleErrorCode("Advanced Edit", editor->loadFromFile(QDir::temp().path() + "/" + "retroarchOverlayEditorTempFile.cfg"));
+   */
 }
 
 void MainWindow::layerChange(){
@@ -419,10 +432,7 @@ void MainWindow::about(){
 void MainWindow::on_sizeSlider_sliderMoved(int position){
    double multiplier = (float)(position - sizeSliderLastPostion) / 50.0 + 1.0;
 
-   if(editor->singleObjectSelected())
-      editor->resize(multiplier, multiplier);
-   else
-      editor->resizeGroupSpacing(multiplier, multiplier);
+   editor->resize(multiplier, multiplier);
    sizeSliderLastPostion = position;
 }
 
@@ -431,10 +441,7 @@ void MainWindow::on_sizeSlider_valueChanged(int value){
     if(value != sizeSliderLastPostion){
        double multiplier = (float)(value - sizeSliderLastPostion) / 50.0 + 1.0;
 
-       if(editor->singleObjectSelected())
-          editor->resize(multiplier, multiplier);
-       else
-          editor->resizeGroupSpacing(multiplier, multiplier);
+       editor->resize(multiplier, multiplier);
        ui->sizeSlider->setValue(50);
        sizeSliderLastPostion = 50;
     }
@@ -446,15 +453,13 @@ void MainWindow::on_sizeSlider_sliderReleased(){
 }
 
 void MainWindow::on_widthSlider_sliderMoved(int position){
-   if(editor->singleObjectSelected())
-      editor->resize((float)(position - widthSliderLastPostion) / 50.0 + 1.0, 1.0);
+   editor->resize((float)(position - widthSliderLastPostion) / 50.0 + 1.0, 1.0);
    widthSliderLastPostion = position;
 }
 
 void MainWindow::on_widthSlider_valueChanged(int value){
    if(value != widthSliderLastPostion){
-      if(editor->singleObjectSelected())
-         editor->resize((float)(value - widthSliderLastPostion) / 50.0 + 1.0, 1.0);
+      editor->resize((float)(value - widthSliderLastPostion) / 50.0 + 1.0, 1.0);
       ui->widthSlider->setValue(50);
       widthSliderLastPostion = 50;
    }
@@ -466,15 +471,13 @@ void MainWindow::on_widthSlider_sliderReleased(){
 }
 
 void MainWindow::on_heightSlider_sliderMoved(int position){
-   if(editor->singleObjectSelected())
-      editor->resize(1.0, (float)(position - heightSliderLastPostion) / 50.0 + 1.0);
+   editor->resize(1.0, (float)(position - heightSliderLastPostion) / 50.0 + 1.0);
    heightSliderLastPostion = position;
 }
 
 void MainWindow::on_heightSlider_valueChanged(int value){
    if(value != heightSliderLastPostion){
-      if(editor->singleObjectSelected())
-            editor->resize(1.0, (float)(value - heightSliderLastPostion) / 50.0 + 1.0);
+      editor->resize(1.0, (float)(value - heightSliderLastPostion) / 50.0 + 1.0);
       ui->heightSlider->setValue(50);
       heightSliderLastPostion = 50;
    }
@@ -483,4 +486,22 @@ void MainWindow::on_heightSlider_valueChanged(int value){
 void MainWindow::on_heightSlider_sliderReleased(){
    heightSliderLastPostion = 50;
    ui->heightSlider->setValue(50);
+}
+
+void MainWindow::on_spreadSlider_sliderMoved(int position){
+   editor->resizeGroupSpacing(1.0, (float)(position - spreadSliderLastPostion) / 50.0 + 1.0);
+   spreadSliderLastPostion = position;
+}
+
+void MainWindow::on_spreadSlider_valueChanged(int value){
+   if(value != spreadSliderLastPostion){
+      editor->resizeGroupSpacing(1.0, (float)(value - spreadSliderLastPostion) / 50.0 + 1.0);
+      ui->spreadSlider->setValue(50);
+      spreadSliderLastPostion = 50;
+   }
+}
+
+void MainWindow::on_spreadSlider_sliderReleased(){
+   spreadSliderLastPostion = 50;
+   ui->spreadSlider->setValue(50);
 }

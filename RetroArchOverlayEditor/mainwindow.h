@@ -5,6 +5,7 @@
 #include <QTimer>
 
 #include "overlayeditor.h"
+#include "advancededitor.h"
 #include "about.h"
 
 namespace Ui {
@@ -70,14 +71,19 @@ private slots:
    void on_heightSlider_sliderMoved(int position);
    void on_heightSlider_valueChanged(int value);
    void on_heightSlider_sliderReleased();
+   void on_spreadSlider_sliderMoved(int position);
+   void on_spreadSlider_valueChanged(int value);
+   void on_spreadSlider_sliderReleased();
 
 private:
    Ui::MainWindow* ui;
    int             sizeSliderLastPostion;
    int             widthSliderLastPostion;
    int             heightSliderLastPostion;
+   int             spreadSliderLastPostion;
    QTimer*         refreshDisplay;
    About           aboutWindow;
+   AdvancedEditor  overlayTextEditor;
 };
 
 #endif

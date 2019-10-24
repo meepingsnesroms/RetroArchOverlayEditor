@@ -94,6 +94,13 @@
           </property>
          </widget>
         </item>
+        <item>
+         <widget class="QLabel" name="label_4">
+          <property name="text">
+           <string>Spread:</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </item>
       <item>
@@ -129,6 +136,19 @@
         </item>
         <item>
          <widget class="QSlider" name="heightSlider">
+          <property name="maximum">
+           <number>100</number>
+          </property>
+          <property name="value">
+           <number>50</number>
+          </property>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QSlider" name="spreadSlider">
           <property name="maximum">
            <number>100</number>
           </property>

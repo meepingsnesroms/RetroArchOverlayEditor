@@ -34,6 +34,7 @@ public:
       bool    circular;
       int     layer;
       QString name;//ID used by RetroArch to determine function
+      QString specialAction;
       QString imageName;
       QPixmap picture;
    }overlay_object;

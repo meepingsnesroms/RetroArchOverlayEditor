@@ -27,6 +27,7 @@ INCLUDEPATH += libretro-common/include
 
 SOURCES += \
     about.cpp \
+    advancededitor.cpp \
     main.cpp \
     mainwindow.cpp \
     overlaydisplay.cpp \
@@ -45,6 +46,7 @@ SOURCES += \
 
 HEADERS += \
     about.h \
+    advancededitor.h \
     libretro-common/include/compat/msvc/stdint.h \
     libretro-common/include/compat/fopen_utf8.h \
     libretro-common/include/compat/msvc.h \
@@ -71,6 +73,7 @@ HEADERS += \
 
 FORMS += \
     about.ui \
+    advancededitor.ui \
     mainwindow.ui
 
 # Default rules for deployment.
