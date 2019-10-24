@@ -9,6 +9,8 @@
 #include <QColor>
 #include <QRect>
 #include <QFileInfo>
+#include <QFile>
+#include <QDir>
 
 //libretro headers
 #include <file/config_file.h>
@@ -351,9 +353,6 @@ const QString& OverlayEditor::loadFromFile(const QString& path){
          newObject.width *= 2.0;
          newObject.height *= 2.0;
 
-         //free duplicated string
-         free(imageNamePtr);
-
          objects += newObject;
       }
    }
@@ -361,6 +360,40 @@ const QString& OverlayEditor::loadFromFile(const QString& path){
    config_file_free(fileInput);
    render();
    return ERROR_NONE;
+}
+
+QString OverlayEditor::saveToString(){
+   //THIS IS A HACK: the RetroArch config code doesnt support loading and saving from strings properly so its exchanged through files
+   QFile overlay(QDir::temp().path() + "/" + "retroarchOverlayEditorTempFile.cfg");
+   QString overlayData;
+
+   //write out config data
+   saveToFile(QDir::temp().path() + "/" + "retroarchOverlayEditorTempFile.cfg");
+
+   //load config data to string
+   overlay.open(QFile::ReadOnly);
+   overlayData = QString::fromUtf8(overlay.readAll());
+   overlay.close();
+
+   return overlayData;
+}
+
+void OverlayEditor::loadFromString(QString str){
+   //THIS IS A HACK: the RetroArch config code doesnt support loading and saving from strings properly so its exchanged through files
+   QFile overlay(QDir::temp().path() + "/" + ".retroarchOverlayEditorTempFile.cfg");
+   QString openOverlay;
+
+   //write out new data
+   overlay.open(QFile::WriteOnly | QFile::Truncate);
+   overlay.write(str.toLatin1());
+   overlay.close();
+
+   //load updated data, have to backup currentlyOpenOverlay because loading from a file will change it
+   openOverlay = currentlyOpenOverlay;
+   loadFromFile(QDir::temp().path() + "/" + ".retroarchOverlayEditorTempFile.cfg");
+   currentlyOpenOverlay = openOverlay;
+
+   overlay.remove();
 }
 
 void OverlayEditor::setCanvasSize(int width, int height){

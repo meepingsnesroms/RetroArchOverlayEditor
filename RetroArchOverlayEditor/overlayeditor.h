@@ -82,6 +82,8 @@ public:
    QString getCurrentlyOpenOverlay(){return currentlyOpenOverlay;}
    const QString& saveToFile(const QString& path);
    const QString& loadFromFile(const QString& path);
+   QString saveToString();
+   void loadFromString(QString str);
    void setCanvasSize(int width, int height);
    void getCanvasSize(int* width, int* height){*width = framebuffer->width(); *height = framebuffer->height();}
    void setBackground(const QString& imagePath);

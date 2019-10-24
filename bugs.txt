@@ -1,3 +1,6 @@
+Need to check for updated version of RetroArch config code
+Save and load from string break image paths
+Advanced edit dosent check for file access errors
 overlay*_desc*_pct is unsupported
 overlay*_full_screen = false is unsupported
 overlay*_rect is unsupported

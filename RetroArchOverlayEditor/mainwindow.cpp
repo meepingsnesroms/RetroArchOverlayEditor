@@ -7,8 +7,6 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QFileInfo>
-#include <QFile>
-#include <QDir>
 
 
 #define DEFAULT_WIDTH 640
@@ -407,17 +405,12 @@ void MainWindow::alignObjectWithBorderPixels(){
 }
 
 void MainWindow::advancedEdit(){
-   /*
-   //QDir::temp().path();
-   //QDir::root().path();
-   //TODO: need to save file to temp, load it in an editor and when its closed reload from temp
-   handleErrorCode("Advanced Edit", editor->saveToFile(QDir::temp().path() + "/" + "retroarchOverlayEditorTempFile.cfg"));
-   //QFile(QDir::temp().path() + "/" + "retroarchOverlayEditorTempFile.cfg");
-   overlayTextEditor.ui->overlayMetadata->setPlainText("NomiKoto");
+   overlayTextEditor.ui->overlayMetadata->setPlainText(editor->saveToString());
    overlayTextEditor.exec();
-   overlayTextEditor.ui->overlayMetadata->toPlainText();
-   handleErrorCode("Advanced Edit", editor->loadFromFile(QDir::temp().path() + "/" + "retroarchOverlayEditorTempFile.cfg"));
-   */
+   editor->loadFromString(overlayTextEditor.ui->overlayMetadata->toPlainText());
+
+   //the amount of layers may have changed, sync the GUI
+   redraw();
 }
 
 void MainWindow::layerChange(){
