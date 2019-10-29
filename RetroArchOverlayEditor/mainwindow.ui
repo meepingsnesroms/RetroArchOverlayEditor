@@ -148,15 +148,9 @@
          </widget>
         </item>
         <item>
-         <widget class="QSlider" name="spreadSlider">
-          <property name="maximum">
-           <number>100</number>
-          </property>
-          <property name="value">
-           <number>50</number>
-          </property>
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
+         <widget class="QCheckBox" name="spreadEnabled">
+          <property name="text">
+           <string/>
           </property>
          </widget>
         </item>

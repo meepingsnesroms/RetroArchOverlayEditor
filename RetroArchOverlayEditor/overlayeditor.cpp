@@ -2,6 +2,7 @@
 
 //Qt headers
 #include <QtGlobal>
+#include <QtMath>
 #include <QString>
 #include <QPixmap>
 #include <QPainter>
@@ -375,40 +376,6 @@ const QString& OverlayEditor::loadFromFile(const QString& path){
    return ERROR_NONE;
 }
 
-QString OverlayEditor::saveToString(){
-   //THIS IS A HACK: the RetroArch config code doesnt support loading and saving from strings properly so its exchanged through files
-   QFile overlay(QDir::temp().path() + "/" + "retroarchOverlayEditorTempFile.cfg");
-   QString overlayData;
-
-   //write out config data
-   saveToFile(QDir::temp().path() + "/" + "retroarchOverlayEditorTempFile.cfg");
-
-   //load config data to string
-   overlay.open(QFile::ReadOnly);
-   overlayData = QString::fromUtf8(overlay.readAll());
-   overlay.close();
-
-   return overlayData;
-}
-
-void OverlayEditor::loadFromString(QString str){
-   //THIS IS A HACK: the RetroArch config code doesnt support loading and saving from strings properly so its exchanged through files
-   QFile overlay(QDir::temp().path() + "/" + ".retroarchOverlayEditorTempFile.cfg");
-   QString openOverlay;
-
-   //write out new data
-   overlay.open(QFile::WriteOnly | QFile::Truncate);
-   overlay.write(str.toLatin1());
-   overlay.close();
-
-   //load updated data, have to backup currentlyOpenOverlay because loading from a file will change it
-   openOverlay = currentlyOpenOverlay;
-   loadFromFile(QDir::temp().path() + "/" + ".retroarchOverlayEditorTempFile.cfg");
-   currentlyOpenOverlay = openOverlay;
-
-   overlay.remove();
-}
-
 void OverlayEditor::setCanvasSize(int width, int height){
    if(width > 0 && height > 0){
       delete renderer;
@@ -672,23 +639,31 @@ const QString& OverlayEditor::resizeGroupSpacing(double w, double h){
    return ERROR_NOT_POSSIBLE;
 }
 
-const QString& OverlayEditor::alignObjectWithBorderPixels(){
-   if(selectedObjects.size() == 1){
-      //TODO: make this work
-      //first find matching top left pixel
-      //then check if all the others match, if they dont keep searching until the end of the image
-      //when a match is found log it and finish searching untill another match is found of file ends
-      //if exacly 1 match is found place button over it otherwise throw an error
-      /*
-      "Cannot match, button image is bigger then background."
-      "Multiple matches, dont know where to put button."
-      "No matching area found."
-      */
+const QString& OverlayEditor::pluckObjectsImageFromLayerImage(){
+   if(layers[currentLayer].overlayImageExists){
+      if(selectedObjects.size() >= 1){
+         for(int index = 0; index < selectedObjects.size(); index++){
+            //object location and size has to be matched to layer image size
+            int newX = qRound(selectedObjects[index]->x * layers[currentLayer].overlayImage.width());
+            int newY = qRound(selectedObjects[index]->y * layers[currentLayer].overlayImage.height());
+            int newWidth = qRound(selectedObjects[index]->width * layers[currentLayer].overlayImage.width());
+            int newHeight = qRound(selectedObjects[index]->height * layers[currentLayer].overlayImage.height());
 
-      render();
+            selectedObjects[index]->x = (double)newX / layers[currentLayer].overlayImage.width();
+            selectedObjects[index]->y = (double)newY / layers[currentLayer].overlayImage.height();
+            selectedObjects[index]->width = (double)newWidth / layers[currentLayer].overlayImage.width();
+            selectedObjects[index]->height = (double)newHeight / layers[currentLayer].overlayImage.height();
+            selectedObjects[index]->hasPicture = true;
+            selectedObjects[index]->picture = layers[currentLayer].overlayImage.copy(newX, newY, newWidth, newHeight);
+         }
+
+         render();
+      }
+
+      return ERROR_NONE;
    }
 
-   return ERROR_NOT_POSSIBLE;
+   return ERROR_LAYER_HAS_NO_BACKGROUND;
 }
 
 void OverlayEditor::setCollisionType(bool circular){

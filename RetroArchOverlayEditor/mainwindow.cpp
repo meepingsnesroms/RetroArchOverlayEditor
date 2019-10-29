@@ -134,15 +134,10 @@ MainWindow::MainWindow(QWidget* parent) :
    connect(setObjectsSizeAction, &QAction::triggered, this, &MainWindow::setObjectsSize);
    ui->menuActions->addAction(setObjectsSizeAction);
 
-   QAction* alignObjectWithBorderPixelsAction = new QAction("Align Object With Border Pixels (UNIMPLEMENTED)", this);
-   alignObjectWithBorderPixelsAction->setStatusTip("Match outer 1 pixel border to of object to background and move object there");
-   connect(alignObjectWithBorderPixelsAction, &QAction::triggered, this, &MainWindow::alignObjectWithBorderPixels);
-   ui->menuActions->addAction(alignObjectWithBorderPixelsAction);
-
-   QAction* advancedEditAction = new QAction("Advanced Edit", this);
-   advancedEditAction->setStatusTip("Directly edit overlay object code");
-   connect(advancedEditAction, &QAction::triggered, this, &MainWindow::advancedEdit);
-   ui->menuActions->addAction(advancedEditAction);
+   QAction* pluckObjectsImageFromLayerImageAction = new QAction("Pluck Object(s) Image From Layer Image", this);
+   pluckObjectsImageFromLayerImageAction->setStatusTip("Take object images from the layer background, can be edited later to make animated overlays");
+   connect(pluckObjectsImageFromLayerImageAction, &QAction::triggered, this, &MainWindow::pluckObjectsImageFromLayerImage);
+   ui->menuActions->addAction(pluckObjectsImageFromLayerImageAction);
 
    QAction* aboutAction = new QAction("About", this);
    aboutAction->setStatusTip("About this application");
@@ -400,17 +395,8 @@ void MainWindow::setObjectsSize(){
    }
 }
 
-void MainWindow::alignObjectWithBorderPixels(){
-   handleErrorCode("Align Object With Border Pixels", editor->alignObjectWithBorderPixels());
-}
-
-void MainWindow::advancedEdit(){
-   overlayTextEditor.ui->overlayMetadata->setPlainText(editor->saveToString());
-   overlayTextEditor.exec();
-   editor->loadFromString(overlayTextEditor.ui->overlayMetadata->toPlainText());
-
-   //the amount of layers may have changed, sync the GUI
-   redraw();
+void MainWindow::pluckObjectsImageFromLayerImage(){
+   handleErrorCode("Pluck Object(s) Image From Layer Image", editor->pluckObjectsImageFromLayerImage());
 }
 
 void MainWindow::layerChange(){
@@ -425,7 +411,10 @@ void MainWindow::about(){
 void MainWindow::on_sizeSlider_sliderMoved(int position){
    double multiplier = (float)(position - sizeSliderLastPostion) / 50.0 + 1.0;
 
-   editor->resize(multiplier, multiplier);
+   if(ui->spreadEnabled->isChecked())
+      editor->resizeGroupSpacing(multiplier, multiplier);
+   else
+      editor->resize(multiplier, multiplier);
    sizeSliderLastPostion = position;
 }
 
@@ -434,7 +423,10 @@ void MainWindow::on_sizeSlider_valueChanged(int value){
     if(value != sizeSliderLastPostion){
        double multiplier = (float)(value - sizeSliderLastPostion) / 50.0 + 1.0;
 
-       editor->resize(multiplier, multiplier);
+       if(ui->spreadEnabled->isChecked())
+          editor->resizeGroupSpacing(multiplier, multiplier);
+       else
+         editor->resize(multiplier, multiplier);
        ui->sizeSlider->setValue(50);
        sizeSliderLastPostion = 50;
     }
@@ -446,13 +438,23 @@ void MainWindow::on_sizeSlider_sliderReleased(){
 }
 
 void MainWindow::on_widthSlider_sliderMoved(int position){
-   editor->resize((float)(position - widthSliderLastPostion) / 50.0 + 1.0, 1.0);
+   double multiplier = (float)(position - widthSliderLastPostion) / 50.0 + 1.0;
+
+   if(ui->spreadEnabled->isChecked())
+      editor->resizeGroupSpacing(multiplier, 1.0);
+   else
+      editor->resize(multiplier, 1.0);
    widthSliderLastPostion = position;
 }
 
 void MainWindow::on_widthSlider_valueChanged(int value){
    if(value != widthSliderLastPostion){
-      editor->resize((float)(value - widthSliderLastPostion) / 50.0 + 1.0, 1.0);
+      double multiplier = (float)(value - widthSliderLastPostion) / 50.0 + 1.0;
+
+      if(ui->spreadEnabled->isChecked())
+         editor->resizeGroupSpacing(multiplier, 1.0);
+      else
+         editor->resize(multiplier, 1.0);
       ui->widthSlider->setValue(50);
       widthSliderLastPostion = 50;
    }
@@ -464,13 +466,23 @@ void MainWindow::on_widthSlider_sliderReleased(){
 }
 
 void MainWindow::on_heightSlider_sliderMoved(int position){
-   editor->resize(1.0, (float)(position - heightSliderLastPostion) / 50.0 + 1.0);
+   double multiplier = (float)(position - heightSliderLastPostion) / 50.0 + 1.0;
+
+   if(ui->spreadEnabled->isChecked())
+      editor->resizeGroupSpacing(1.0, multiplier);
+   else
+      editor->resize(1.0, multiplier);
    heightSliderLastPostion = position;
 }
 
 void MainWindow::on_heightSlider_valueChanged(int value){
    if(value != heightSliderLastPostion){
-      editor->resize(1.0, (float)(value - heightSliderLastPostion) / 50.0 + 1.0);
+      double multiplier = (float)(value - heightSliderLastPostion) / 50.0 + 1.0;
+
+      if(ui->spreadEnabled->isChecked())
+         editor->resizeGroupSpacing(1.0, multiplier);
+      else
+         editor->resize(1.0, multiplier);
       ui->heightSlider->setValue(50);
       heightSliderLastPostion = 50;
    }
@@ -479,22 +491,4 @@ void MainWindow::on_heightSlider_valueChanged(int value){
 void MainWindow::on_heightSlider_sliderReleased(){
    heightSliderLastPostion = 50;
    ui->heightSlider->setValue(50);
-}
-
-void MainWindow::on_spreadSlider_sliderMoved(int position){
-   editor->resizeGroupSpacing(1.0, (float)(position - spreadSliderLastPostion) / 50.0 + 1.0);
-   spreadSliderLastPostion = position;
-}
-
-void MainWindow::on_spreadSlider_valueChanged(int value){
-   if(value != spreadSliderLastPostion){
-      editor->resizeGroupSpacing(1.0, (float)(value - spreadSliderLastPostion) / 50.0 + 1.0);
-      ui->spreadSlider->setValue(50);
-      spreadSliderLastPostion = 50;
-   }
-}
-
-void MainWindow::on_spreadSlider_sliderReleased(){
-   spreadSliderLastPostion = 50;
-   ui->spreadSlider->setValue(50);
 }

@@ -19,6 +19,7 @@ public:
    const QString ERROR_INVALID_CHARS_USED = "Object names can only contain A<->Z, a<->z, 1<->9, _, and |.";
    const QString ERROR_FILE_DOESNT_EXIST = "That file doesn't exist.";
    const QString ERROR_CANT_SAVE_FILE = "Can't save file.";
+   const QString ERROR_LAYER_HAS_NO_BACKGROUND = "This layer has no background.";
 
    enum{
       OBJECT_BUTTON = 0,
@@ -82,8 +83,6 @@ public:
    QString getCurrentlyOpenOverlay(){return currentlyOpenOverlay;}
    const QString& saveToFile(const QString& path);
    const QString& loadFromFile(const QString& path);
-   QString saveToString();
-   void loadFromString(QString str);
    void setCanvasSize(int width, int height);
    void getCanvasSize(int* width, int* height){*width = framebuffer->width(); *height = framebuffer->height();}
    void setBackground(const QString& imagePath);
@@ -116,7 +115,7 @@ public:
    void remove();
    void resize(double w, double h);//multiplier, 1.0 = stay the same
    const QString& resizeGroupSpacing(double w, double h);//multiplier, 1.0 = stay the same
-   const QString& alignObjectWithBorderPixels();
+   const QString& pluckObjectsImageFromLayerImage();
    void setCollisionType(bool circular);
 };
 
