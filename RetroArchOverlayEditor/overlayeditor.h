@@ -6,6 +6,7 @@
 #include <QPixmap>
 #include <QPainter>
 #include <QColor>
+#include <QMap>
 
 class OverlayEditor{
 public:
@@ -66,6 +67,9 @@ private:
    double                   mouseLastX;
    double                   mouseLastY;
 
+   bool validateStringChars(const QString& extraChars, const QString& string);//a<->z, A<->Z and 0<->9 are implicit
+   //QMap<QString, QString> splitPropertyList(const QString& list);
+   //QString makePropertyList(QMap<QString, QString> list);
    QPixmap colorAsImage(QColor color);
    bool hitboxDot(double x1, double y1, double w1, double h1, double x2, double y2);
    bool hitboxSquare(double x1, double y1, double w1, double h1, double x2, double y2, double w2, double h2);
@@ -106,8 +110,10 @@ public:
 
    //button configuration
    void addObject(bool isJoystick);
-   QString getObjectName(){return selectedObjects.size() == 1 ? selectedObjects[0]->name : ERROR_NOT_POSSIBLE;}
+   QString getObjectName(){return selectedObjects.size() == 1 ? selectedObjects[0]->name : "";}
+   QString getObjectProperties();
    const QString& setObjectName(const QString& name);
+   const QString& setObjectProperties(const QString& properties);
    const QString& setObjectImage(const QString& imagePath);
    const QString& getObjectsCoordinates(double* x, double* y){return getCenterOfSelectedObjects(x, y);}
    const QString& setObjectsCoordinates(double x, double y);

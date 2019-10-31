@@ -104,6 +104,11 @@ MainWindow::MainWindow(QWidget* parent) :
    connect(setObjectNameAction, &QAction::triggered, this, &MainWindow::setObjectName);
    ui->menuActions->addAction(setObjectNameAction);
 
+   QAction* setObjectPropertiesAction = new QAction("Set Object Properties", this);
+   setObjectPropertiesAction->setStatusTip("Set misc properties of an object");
+   connect(setObjectPropertiesAction, &QAction::triggered, this, &MainWindow::setObjectProperties);
+   ui->menuActions->addAction(setObjectPropertiesAction);
+
    QAction* setObjectImageAction = new QAction("Set Object Image", this);
    setObjectImageAction->setStatusTip("Set image displayed for selected object");
    connect(setObjectImageAction, &QAction::triggered, this, &MainWindow::setObjectImage);
@@ -316,6 +321,16 @@ void MainWindow::setObjectName(){
 
       if(ok)
          handleErrorCode("Set Object Name", editor->setObjectName(name));
+   }
+}
+
+void MainWindow::setObjectProperties(){
+   if(editor->singleObjectSelected()){
+      bool ok;
+      QString properties = QInputDialog::getText(this, "Set Object Properties", "Object Properties:", QLineEdit::Normal, editor->getObjectProperties(), &ok);
+
+      if(ok)
+         handleErrorCode("Set Object Properties", editor->setObjectProperties(properties));
    }
 }
 

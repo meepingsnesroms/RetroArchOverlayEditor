@@ -1,3 +1,5 @@
+Need to clean up duplicate code
+Has no hotkeys setup
 Need "Set Layer Properties" and "Set Object Properties" menus
 overlay*_full_screen = false is unsupported(this dosent seem to do anything in RetroArch anyway?)
 Cant change alpha channel and range mods

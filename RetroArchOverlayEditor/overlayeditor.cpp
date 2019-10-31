@@ -3,6 +3,7 @@
 //Qt headers
 #include <QtGlobal>
 #include <QtMath>
+#include <QChar>
 #include <QString>
 #include <QPixmap>
 #include <QPainter>
@@ -11,6 +12,7 @@
 #include <QRect>
 #include <QFileInfo>
 #include <QFile>
+#include <QMap>
 
 //libretro headers
 #include <file/config_file.h>
@@ -31,6 +33,69 @@ OverlayEditor::~OverlayEditor(){
    delete renderer;
    delete framebuffer;
 }
+
+bool OverlayEditor::validateStringChars(const QString& extraChars, const QString& string){
+   for(int index = 0; index < string.size(); index++){
+      if(!string[index].isLetter() && !string[index].isDigit()){
+         //check other chars
+         for(int index2 = 0; index2 < extraChars.size(); index2++){
+            if(string[index] == extraChars[index2])
+               goto safe;
+         }
+
+         //char invalid
+         return false;
+      }
+
+      safe:
+      true;
+   }
+   return true;
+}
+
+/*
+QMap<QString, QString> OverlayEditor::splitPropertyList(const QString& list){
+   QString noSpaceProperties;
+   QMap<QString, QString> objectPairs;
+   QStringList propertiesSplit;
+
+   //clear spaces
+   noSpaceProperties = list;
+   noSpaceProperties.remove(' ');
+   noSpaceProperties.remove('\t');
+   noSpaceProperties.remove('\n');
+   noSpaceProperties.remove('\r');
+
+   //return if there are no pairs
+   if(noSpaceProperties.isEmpty()){
+      objectPairs["#EMPTY#"] = "true";
+      return objectPairs;
+   }
+
+   //split prop list
+   propertiesSplit = noSpaceProperties.split(',');
+
+   //validate list
+   for(int index = 0; index < propertiesSplit.size(); index++){
+      QStringList currentPair = propertiesSplit[index].split(':');
+
+      if(!validateStringChars("_", currentPair[0]) || !validateStringChars(".", currentPair[1]))
+         objectPairs["#INVALID#"] = "true";
+      else
+         objectPairs[currentPair[0]] = currentPair[1];
+   }
+
+   return objectPairs;
+}
+
+QString OverlayEditor::makePropertyList(QMap<QString, QString> list){
+   QString propertyList = "";
+
+
+
+   return propertyList;
+}
+*/
 
 QPixmap OverlayEditor::colorAsImage(QColor color){
    QPixmap image(1, 1);
@@ -327,9 +392,6 @@ const QString& OverlayEditor::loadFromFile(const QString& path){
             layerObject.hasAlphaMod = false;
             layerObject.hasRangeMod = false;
             layerObject.hasSaturatePct = false;
-            layerObject.alphaMod = 1.0;
-            layerObject.rangeMod = 1.0;
-            layerObject.saturatePct = 1.0;
 
             //the original image is still used to calculate size below but is not drawn
             layers[currentOverlay].overlayImageExists = false;
@@ -579,27 +641,128 @@ void OverlayEditor::addObject(bool isJoystick){
    newObject.name = "nul";
    newObject.specialAction = "";
    newObject.hasPicture = false;
-   newObject.picture = isJoystick ? colorAsImage(NULL_JOYSTICK_COLOR) : colorAsImage(NULL_BUTTON_COLOR);
+   newObject.picture = colorAsImage(isJoystick ? NULL_JOYSTICK_COLOR : NULL_BUTTON_COLOR);
    newObject.movable = isJoystick;
    newObject.hasAlphaMod = false;
    newObject.hasRangeMod = false;
    newObject.hasSaturatePct = false;
-   newObject.alphaMod = 1.0;
-   newObject.rangeMod = 1.0;
-   newObject.saturatePct = 1.0;
 
    objects += newObject;
 
    render();
 }
 
+QString OverlayEditor::getObjectProperties(){
+   if(selectedObjects.size() == 1){
+      QString value = "";
+      bool firstEntry = true;
+
+      if(selectedObjects[0]->movable){
+         if(!firstEntry)
+            value += ", ";
+         value += "movable:true";
+         firstEntry = false;
+      }
+
+      if(selectedObjects[0]->hasAlphaMod){
+         if(!firstEntry)
+            value += ", ";
+         value += "alpha_mod:" + QString::number(selectedObjects[0]->alphaMod);
+         firstEntry = false;
+      }
+
+      if(selectedObjects[0]->hasRangeMod){
+         if(!firstEntry)
+            value += ", ";
+         value += "range_mod:" + QString::number(selectedObjects[0]->rangeMod);
+         firstEntry = false;
+      }
+
+      if(selectedObjects[0]->hasSaturatePct){
+         if(!firstEntry)
+            value += ", ";
+         value += "saturate_pct:" + QString::number(selectedObjects[0]->saturatePct);
+         firstEntry = false;
+      }
+
+      return value;
+   }
+
+   return "";
+}
+
 const QString& OverlayEditor::setObjectName(const QString& name){
    if(selectedObjects.size() == 1){
       for(int index = 0; index < name.size(); index++)
-         if(!name[index].isLetter() && !name[index].isDigit() && !(name[index] == '_') && !(name[index] == '|'))
+         if(!validateStringChars("_|", name))
             return ERROR_INVALID_CHARS_USED;
 
       selectedObjects[0]->name = name;
+      return ERROR_NONE;
+   }
+
+   return ERROR_NOT_POSSIBLE;
+}
+
+const QString& OverlayEditor::setObjectProperties(const QString& properties){
+   if(selectedObjects.size() == 1){
+      QString noSpaceProperties;
+      QVector<QStringList> objectPairs;
+      QStringList propertiesSplit;
+
+      //clear spaces
+      noSpaceProperties = properties;
+      noSpaceProperties.remove(' ');
+
+      if(!noSpaceProperties.isEmpty()){
+         //split prop list
+         propertiesSplit = noSpaceProperties.split(',');
+
+         //split props into key/value pairs
+         objectPairs.resize(propertiesSplit.size());
+         for(int index = 0; index < propertiesSplit.size(); index++)
+            objectPairs[index] = propertiesSplit[index].split(':');
+      }
+      else{
+         //no object pairs
+         objectPairs.resize(0);
+      }
+
+      //validate structure integrity
+      for(int index = 0; index < objectPairs.size(); index++){
+         if(objectPairs[index].size() != 2)
+            return ERROR_NOT_POSSIBLE;
+
+         if(!validateStringChars("_", objectPairs[index][0]) || !validateStringChars("_.", objectPairs[index][1]))
+            return ERROR_INVALID_CHARS_USED;
+      }
+
+      //set object property default state
+      selectedObjects[0]->movable = false;
+      selectedObjects[0]->hasAlphaMod = false;
+      selectedObjects[0]->hasRangeMod = false;
+      selectedObjects[0]->hasSaturatePct = false;
+
+      //all data is valid now, act on it
+      for(int index = 0; index < objectPairs.size(); index++){
+         if(objectPairs[index][0] == "movable"){
+            selectedObjects[0]->movable = objectPairs[index][1].toLower() == "true";
+            if(!selectedObjects[0]->hasPicture)
+               selectedObjects[0]->picture = colorAsImage(selectedObjects[0]->movable ? NULL_JOYSTICK_COLOR : NULL_BUTTON_COLOR);
+         }
+         else if(objectPairs[index][0] == "alpha_mod"){
+            selectedObjects[0]->alphaMod = objectPairs[index][1].toDouble(&selectedObjects[0]->hasAlphaMod);
+         }
+         else if(objectPairs[index][0] == "range_mod"){
+            selectedObjects[0]->rangeMod = objectPairs[index][1].toDouble(&selectedObjects[0]->hasRangeMod);
+         }
+         else if(objectPairs[index][0] == "saturate_pct"){
+            selectedObjects[0]->saturatePct = objectPairs[index][1].toDouble(&selectedObjects[0]->hasSaturatePct);
+         }
+      }
+
+      render();
+
       return ERROR_NONE;
    }
 
@@ -610,7 +773,7 @@ const QString& OverlayEditor::setObjectImage(const QString& imagePath){
    if(selectedObjects.size() == 1){
       if(imagePath.isEmpty()){
          selectedObjects[0]->hasPicture = false;
-         selectedObjects[0]->picture = selectedObjects[0]->movable ? colorAsImage(NULL_JOYSTICK_COLOR) : colorAsImage(NULL_BUTTON_COLOR);
+         selectedObjects[0]->picture = colorAsImage(selectedObjects[0]->movable ? NULL_JOYSTICK_COLOR : NULL_BUTTON_COLOR);
       }
       else{
          selectedObjects[0]->hasPicture = true;
