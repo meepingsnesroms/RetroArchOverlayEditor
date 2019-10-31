@@ -43,9 +43,9 @@ public:
    }overlay_object;
 
    typedef struct{
-      bool    rangeModExists;
-      bool    alphaModExists;
-      bool    overlayImageExists;
+      bool    hasRangeMod;
+      bool    hasAlphaMod;
+      bool    hasOverlayImage;
       double  rangeMod;
       double  alphaMod;
       QPixmap overlayImage;

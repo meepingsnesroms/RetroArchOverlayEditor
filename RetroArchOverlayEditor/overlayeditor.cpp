@@ -187,7 +187,7 @@ void OverlayEditor::render(){
    }
 
    //draw layer image
-   if(layers[currentLayer].overlayImageExists)
+   if(layers[currentLayer].hasOverlayImage)
       renderer->drawPixmap(QRect(0, 0, framebuffer->width(), framebuffer->height()), layers[currentLayer].overlayImage, QRect(0, 0, layers[currentLayer].overlayImage.width(), layers[currentLayer].overlayImage.height()));
 
    //draw all objects
@@ -249,11 +249,11 @@ const QString& OverlayEditor::saveToFile(const QString& path){
       config_set_bool(fileInput, (item + "_full_screen").toStdString().c_str(), true);
       config_set_bool(fileInput, (item + "_normalized").toStdString().c_str(), true);
 
-      if(layers[currentOverlay].rangeModExists)
+      if(layers[currentOverlay].hasRangeMod)
          config_set_double(fileInput, (item + "_range_mod").toStdString().c_str(), layers[currentOverlay].rangeMod);
-      if(layers[currentOverlay].alphaModExists)
+      if(layers[currentOverlay].hasAlphaMod)
          config_set_double(fileInput, (item + "_alpha_mod").toStdString().c_str(), layers[currentOverlay].alphaMod);
-      if(layers[currentOverlay].overlayImageExists){
+      if(layers[currentOverlay].hasOverlayImage){
          config_set_string(fileInput, (item + "_overlay").toStdString().c_str(), (item + ".png").toStdString().c_str());
 
          //save out images, this is needed because images may not be in the same directory or the right format
@@ -355,14 +355,14 @@ const QString& OverlayEditor::loadFromFile(const QString& path){
       layerNames[currentOverlay] = layerNamePtr;
       free(layerNamePtr);
 
-      layers[currentOverlay].rangeModExists = config_get_double(fileInput, (item + "_range_mod").toStdString().c_str(), &layers[currentOverlay].rangeMod);
-      layers[currentOverlay].alphaModExists = config_get_double(fileInput, (item + "_alpha_mod").toStdString().c_str(), &layers[currentOverlay].alphaMod);
+      layers[currentOverlay].hasRangeMod = config_get_double(fileInput, (item + "_range_mod").toStdString().c_str(), &layers[currentOverlay].rangeMod);
+      layers[currentOverlay].hasAlphaMod = config_get_double(fileInput, (item + "_alpha_mod").toStdString().c_str(), &layers[currentOverlay].alphaMod);
       if(!layerImage.isEmpty()){
-         layers[currentOverlay].overlayImageExists = true;
+         layers[currentOverlay].hasOverlayImage = true;
          layers[currentOverlay].overlayImage = QPixmap(QFileInfo(path).path() + "/" + layerImage);
       }
       else{
-         layers[currentOverlay].overlayImageExists = false;
+         layers[currentOverlay].hasOverlayImage = false;
       }
 
       if(config_get_array(fileInput, (item + "_rect").toStdString().c_str(), overlayString, sizeof(overlayString))){
@@ -374,7 +374,7 @@ const QString& OverlayEditor::loadFromFile(const QString& path){
          layerRectCoords[currentOverlay][2] = arrayItems[2].toDouble();
          layerRectCoords[currentOverlay][3] = arrayItems[3].toDouble();
 
-         if(layers[currentOverlay].overlayImageExists){
+         if(layers[currentOverlay].hasOverlayImage){
             //convert background to a null object and remove overlay background
             overlay_object layerObject;
 
@@ -394,7 +394,7 @@ const QString& OverlayEditor::loadFromFile(const QString& path){
             layerObject.hasSaturatePct = false;
 
             //the original image is still used to calculate size below but is not drawn
-            layers[currentOverlay].overlayImageExists = false;
+            layers[currentOverlay].hasOverlayImage = false;
 
             objects += layerObject;
          }
@@ -587,12 +587,12 @@ void OverlayEditor::removeLayer(int layer){
 void OverlayEditor::setLayerImage(const QString& imagePath){
    if(imagePath.isEmpty()){
       //remove background
-      layers[currentLayer].overlayImageExists = false;
+      layers[currentLayer].hasOverlayImage = false;
       layers[currentLayer].overlayImage = QPixmap();
    }
    else{
       //set layer image
-      layers[currentLayer].overlayImageExists = true;
+      layers[currentLayer].hasOverlayImage = true;
       layers[currentLayer].overlayImage = QPixmap(imagePath);
    }
 
@@ -887,7 +887,7 @@ const QString& OverlayEditor::resizeGroupSpacing(double w, double h){
 }
 
 const QString& OverlayEditor::pluckObjectsImageFromLayerImage(){
-   if(layers[currentLayer].overlayImageExists){
+   if(layers[currentLayer].hasOverlayImage){
       if(selectedObjects.size() >= 1){
          for(int index = 0; index < selectedObjects.size(); index++){
             //object location and size has to be matched to layer image size
