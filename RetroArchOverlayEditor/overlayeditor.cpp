@@ -123,7 +123,7 @@ void OverlayEditor::render(){
    }
 
    //draw layer image
-   if(!layers[currentLayer].overlayImage.isNull())
+   if(layers[currentLayer].overlayImageExists)
       renderer->drawPixmap(QRect(0, 0, framebuffer->width(), framebuffer->height()), layers[currentLayer].overlayImage, QRect(0, 0, layers[currentLayer].overlayImage.width(), layers[currentLayer].overlayImage.height()));
 
    //draw all objects
@@ -240,7 +240,10 @@ const QString& OverlayEditor::loadFromFile(const QString& path){
    config_file_t* fileInput = config_file_new(path.toStdString().c_str());
    int totalLayers = 0;
    QVector<bool> layerIsFloatBased;
+   QVector<QVector<double>> layerRectCoords;
    QVector<QString> layerNames;
+   char overlayString[256];
+   QStringList arrayItems;
 
    //only continue if file existed
    if(!fileInput)
@@ -252,8 +255,13 @@ const QString& OverlayEditor::loadFromFile(const QString& path){
 
    //get layer count
    config_get_int(fileInput, "overlays", &totalLayers);
+
+   //allocate structures
    layers.resize(totalLayers);
    layerIsFloatBased.resize(totalLayers);
+   layerRectCoords.resize(totalLayers);
+   for(int index = 0; index < totalLayers; index++)
+      layerRectCoords[index].resize(4);
    layerNames.resize(totalLayers);
 
    //save layer parameters for later
@@ -286,6 +294,45 @@ const QString& OverlayEditor::loadFromFile(const QString& path){
       else{
          layers[currentOverlay].overlayImageExists = false;
       }
+
+      if(config_get_array(fileInput, (item + "_rect").toStdString().c_str(), overlayString, sizeof(overlayString))){
+         //has a rect
+         arrayItems = QString(overlayString).split(",");
+
+         layerRectCoords[currentOverlay][0] = arrayItems[0].toDouble();
+         layerRectCoords[currentOverlay][1] = arrayItems[1].toDouble();
+         layerRectCoords[currentOverlay][2] = arrayItems[2].toDouble();
+         layerRectCoords[currentOverlay][3] = arrayItems[3].toDouble();
+
+         if(layers[currentOverlay].overlayImageExists){
+            //convert to a null object, place and remove the background
+            overlay_object layerObject;
+
+            layerObject.x = layerRectCoords[currentOverlay][0];
+            layerObject.y = layerRectCoords[currentOverlay][1];
+            layerObject.width = layerRectCoords[currentOverlay][2];
+            layerObject.height = layerRectCoords[currentOverlay][3];
+            layerObject.circular = false;
+            layerObject.layer = currentOverlay;
+            layerObject.name = "nul";
+            layerObject.type = OBJECT_BUTTON;
+            layerObject.specialAction = "";
+            layerObject.hasPicture = true;
+            layerObject.picture = layers[currentOverlay].overlayImage;
+
+            //the original image is still used to calculate size below but is not drawn
+            layers[currentOverlay].overlayImageExists = false;
+
+            objects += layerObject;
+         }
+      }
+      else{
+         //normal coords
+         layerRectCoords[currentOverlay][0] = 0.0;
+         layerRectCoords[currentOverlay][1] = 0.0;
+         layerRectCoords[currentOverlay][2] = 1.0;
+         layerRectCoords[currentOverlay][3] = 1.0;
+      }
    }
 
    //add objects
@@ -298,16 +345,18 @@ const QString& OverlayEditor::loadFromFile(const QString& path){
       for(int object = 0; object < totalButtons; object++){
          overlay_object newObject;
          QString item = curOverlayStr + "_desc" + QString::number(object);
-         char overlayString[2000];
          bool success = config_get_array(fileInput, item.toStdString().c_str(), overlayString, sizeof(overlayString));
-         QStringList arrayItems;
          char* imageNamePtr = "";
          QString imageName;
          bool isJoystick = false;
+         bool intBased = !layerIsFloatBased[currentOverlay];//each object can be set as float or int based separately
 
          //no more entrys
          if(!success)
             break;
+
+         //check if button has its own int based value
+         config_get_bool(fileInput, (item + "_normalized").toStdString().c_str(), &intBased);
 
          //get image name
          config_get_string(fileInput, (item + "_overlay").toStdString().c_str(), &imageNamePtr);
@@ -321,14 +370,29 @@ const QString& OverlayEditor::loadFromFile(const QString& path){
 
          newObject.type = isJoystick ? OBJECT_JOYSTICK : OBJECT_BUTTON;
          newObject.name = arrayItems[0];
-         newObject.x = !layerIsFloatBased[currentOverlay] ? arrayItems[1].toDouble() / layers[currentOverlay].overlayImage.width() : arrayItems[1].toDouble();
-         newObject.y = !layerIsFloatBased[currentOverlay] ? arrayItems[2].toDouble() / layers[currentOverlay].overlayImage.height() : arrayItems[2].toDouble();
+         newObject.x = arrayItems[1].toDouble();
+         newObject.y = arrayItems[2].toDouble();
          newObject.circular = arrayItems[3] == "radial";
-         newObject.width = !layerIsFloatBased[currentOverlay] ? arrayItems[4].toDouble() / layers[currentOverlay].overlayImage.width() : arrayItems[4].toDouble();
-         newObject.height = !layerIsFloatBased[currentOverlay] ? arrayItems[5].toDouble() / layers[currentOverlay].overlayImage.height() : arrayItems[5].toDouble();
+         newObject.width = arrayItems[4].toDouble();
+         newObject.height = arrayItems[5].toDouble();
          newObject.hasPicture = !imageName.isEmpty();
          newObject.picture = !imageName.isEmpty() ? QPixmap(QFileInfo(path).path() + "/" + imageName) : colorAsImage(isJoystick ? NULL_JOYSTICK_COLOR : NULL_BUTTON_COLOR);
          newObject.layer = currentOverlay;
+
+         if(intBased){
+            newObject.x /= layers[currentOverlay].overlayImage.width();
+            newObject.y /= layers[currentOverlay].overlayImage.height();
+            newObject.width /= layers[currentOverlay].overlayImage.width();
+            newObject.height /= layers[currentOverlay].overlayImage.height();
+         }
+
+         //shift and scale to rect location
+         newObject.x *= layerRectCoords[currentOverlay][2];
+         newObject.y *= layerRectCoords[currentOverlay][3];
+         newObject.width *= layerRectCoords[currentOverlay][2];
+         newObject.height *= layerRectCoords[currentOverlay][3];
+         newObject.x += layerRectCoords[currentOverlay][0];
+         newObject.y += layerRectCoords[currentOverlay][1];
 
          //handle special actions
          if(newObject.name == "overlay_next"){
