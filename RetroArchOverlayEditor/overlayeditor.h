@@ -21,13 +21,7 @@ public:
    const QString ERROR_CANT_SAVE_FILE = "Can't save file.";
    const QString ERROR_LAYER_HAS_NO_BACKGROUND = "This layer has no background.";
 
-   enum{
-      OBJECT_BUTTON = 0,
-      OBJECT_JOYSTICK
-   };
-
    typedef struct{
-      uint8_t type;
       double  x;
       double  y;
       double  width;
@@ -38,6 +32,13 @@ public:
       QString specialAction;
       bool    hasPicture;
       QPixmap picture;
+      bool    movable;//used for joysticks to make the object move when dragged
+      bool    hasAlphaMod;
+      bool    hasRangeMod;
+      bool    hasSaturatePct;
+      double  alphaMod;
+      double  rangeMod;
+      double  saturatePct;
    }overlay_object;
 
    typedef struct{

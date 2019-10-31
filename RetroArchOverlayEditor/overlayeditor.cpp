@@ -11,7 +11,6 @@
 #include <QRect>
 #include <QFileInfo>
 #include <QFile>
-#include <QDir>
 
 //libretro headers
 #include <file/config_file.h>
@@ -208,10 +207,16 @@ const QString& OverlayEditor::saveToFile(const QString& path){
             QString value = objects[object].name + "," + QString::number(objects[object].x + objects[object].width / 2.0) + "," + QString::number(objects[object].y + objects[object].height / 2.0) + "," + (objects[object].circular ? "radial" : "rect") + "," + QString::number(objects[object].width / 2.0) + "," + QString::number(objects[object].height / 2.0);
 
             config_set_string(fileInput, item.toStdString().c_str(), value.toStdString().c_str());
-            if(objects[object].type == OBJECT_JOYSTICK)
-               config_set_bool(fileInput, (item + "_movable").toStdString().c_str(), true);
             if(objects[object].hasPicture){
                config_set_string(fileInput, (item + "_overlay").toStdString().c_str(), (item + ".png").toStdString().c_str());
+            if(objects[object].movable)
+               config_set_bool(fileInput, (item + "_movable").toStdString().c_str(), true);
+            if(objects[object].hasAlphaMod)
+               config_set_double(fileInput, (item + "_alpha_mod").toStdString().c_str(), objects[object].alphaMod);
+            if(objects[object].hasRangeMod)
+               config_set_double(fileInput, (item + "_range_mod").toStdString().c_str(), objects[object].rangeMod);
+            if(objects[object].hasSaturatePct)
+               config_set_double(fileInput, (item + "_saturate_pct").toStdString().c_str(), objects[object].saturatePct);
 
                //save out images, this is needed because images may not be in the same directory or the right format
                objects[object].picture.save(QFileInfo(path).path() + "/" + item + ".png", "png");
@@ -305,7 +310,7 @@ const QString& OverlayEditor::loadFromFile(const QString& path){
          layerRectCoords[currentOverlay][3] = arrayItems[3].toDouble();
 
          if(layers[currentOverlay].overlayImageExists){
-            //convert to a null object, place and remove the background
+            //convert background to a null object and remove overlay background
             overlay_object layerObject;
 
             layerObject.x = layerRectCoords[currentOverlay][0];
@@ -315,10 +320,16 @@ const QString& OverlayEditor::loadFromFile(const QString& path){
             layerObject.circular = false;
             layerObject.layer = currentOverlay;
             layerObject.name = "nul";
-            layerObject.type = OBJECT_BUTTON;
             layerObject.specialAction = "";
             layerObject.hasPicture = true;
             layerObject.picture = layers[currentOverlay].overlayImage;
+            layerObject.movable = false;
+            layerObject.hasAlphaMod = false;
+            layerObject.hasRangeMod = false;
+            layerObject.hasSaturatePct = false;
+            layerObject.alphaMod = 1.0;
+            layerObject.rangeMod = 1.0;
+            layerObject.saturatePct = 1.0;
 
             //the original image is still used to calculate size below but is not drawn
             layers[currentOverlay].overlayImageExists = false;
@@ -348,7 +359,7 @@ const QString& OverlayEditor::loadFromFile(const QString& path){
          bool success = config_get_array(fileInput, item.toStdString().c_str(), overlayString, sizeof(overlayString));
          char* imageNamePtr = "";
          QString imageName;
-         bool isJoystick = false;
+         bool isMovable = false;
          bool intBased = !layerIsFloatBased[currentOverlay];//each object can be set as float or int based separately
 
          //no more entrys
@@ -364,11 +375,10 @@ const QString& OverlayEditor::loadFromFile(const QString& path){
          free(imageNamePtr);
 
          //get object type
-         config_get_bool(fileInput, (item + "_movable").toStdString().c_str(), &isJoystick);
+         config_get_bool(fileInput, (item + "_movable").toStdString().c_str(), &isMovable);
 
          arrayItems = QString(overlayString).split(",");
 
-         newObject.type = isJoystick ? OBJECT_JOYSTICK : OBJECT_BUTTON;
          newObject.name = arrayItems[0];
          newObject.x = arrayItems[1].toDouble();
          newObject.y = arrayItems[2].toDouble();
@@ -376,8 +386,12 @@ const QString& OverlayEditor::loadFromFile(const QString& path){
          newObject.width = arrayItems[4].toDouble();
          newObject.height = arrayItems[5].toDouble();
          newObject.hasPicture = !imageName.isEmpty();
-         newObject.picture = !imageName.isEmpty() ? QPixmap(QFileInfo(path).path() + "/" + imageName) : colorAsImage(isJoystick ? NULL_JOYSTICK_COLOR : NULL_BUTTON_COLOR);
+         newObject.picture = !imageName.isEmpty() ? QPixmap(QFileInfo(path).path() + "/" + imageName) : colorAsImage(isMovable ? NULL_JOYSTICK_COLOR : NULL_BUTTON_COLOR);
          newObject.layer = currentOverlay;
+         newObject.movable = isMovable;
+         newObject.hasAlphaMod = config_get_double(fileInput, (item + "_alpha_mod").toStdString().c_str(), &newObject.alphaMod);
+         newObject.hasRangeMod = config_get_double(fileInput, (item + "_range_mod").toStdString().c_str(), &newObject.rangeMod);
+         newObject.hasSaturatePct = config_get_double(fileInput, (item + "_saturate_pct").toStdString().c_str(), &newObject.saturatePct);
 
          if(intBased){
             newObject.x /= layers[currentOverlay].overlayImage.width();
@@ -557,7 +571,6 @@ void OverlayEditor::mouseUp(){
 void OverlayEditor::addObject(bool isJoystick){
    overlay_object newObject;
 
-   newObject.type = isJoystick ? OBJECT_JOYSTICK : OBJECT_BUTTON;
    newObject.x = 0.5 - 0.05;
    newObject.y = 0.5 - 0.05;
    newObject.width = 0.1;
@@ -567,6 +580,13 @@ void OverlayEditor::addObject(bool isJoystick){
    newObject.specialAction = "";
    newObject.hasPicture = false;
    newObject.picture = isJoystick ? colorAsImage(NULL_JOYSTICK_COLOR) : colorAsImage(NULL_BUTTON_COLOR);
+   newObject.movable = isJoystick;
+   newObject.hasAlphaMod = false;
+   newObject.hasRangeMod = false;
+   newObject.hasSaturatePct = false;
+   newObject.alphaMod = 1.0;
+   newObject.rangeMod = 1.0;
+   newObject.saturatePct = 1.0;
 
    objects += newObject;
 
@@ -590,7 +610,7 @@ const QString& OverlayEditor::setObjectImage(const QString& imagePath){
    if(selectedObjects.size() == 1){
       if(imagePath.isEmpty()){
          selectedObjects[0]->hasPicture = false;
-         selectedObjects[0]->picture = selectedObjects[0]->type == OBJECT_JOYSTICK  ? colorAsImage(NULL_JOYSTICK_COLOR) : colorAsImage(NULL_BUTTON_COLOR);
+         selectedObjects[0]->picture = selectedObjects[0]->movable ? colorAsImage(NULL_JOYSTICK_COLOR) : colorAsImage(NULL_BUTTON_COLOR);
       }
       else{
          selectedObjects[0]->hasPicture = true;
