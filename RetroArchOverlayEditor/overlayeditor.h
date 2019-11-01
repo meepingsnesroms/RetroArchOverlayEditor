@@ -67,9 +67,10 @@ private:
    double                   mouseLastX;
    double                   mouseLastY;
 
-   bool validateStringChars(const QString& extraChars, const QString& string);//a<->z, A<->Z and 0<->9 are implicit
-   //QMap<QString, QString> splitPropertyList(const QString& list);
-   //QString makePropertyList(QMap<QString, QString> list);
+   bool toBool(const QString& str, bool* ok = nullptr);
+   bool validateStringChars(const QString& extraChars, const QString& str);//a<->z, A<->Z and 0<->9 are implicit
+   QMap<QString, QString> splitPropertyList(const QString& list);
+   QString makePropertyList(const QMap<QString, QString>& list);
    QPixmap colorAsImage(QColor color);
    bool hitboxDot(double x1, double y1, double w1, double h1, double x2, double y2);
    bool hitboxSquare(double x1, double y1, double w1, double h1, double x2, double y2, double w2, double h2);
