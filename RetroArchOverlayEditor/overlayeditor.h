@@ -94,7 +94,9 @@ public:
    void setBackground(const QString& imagePath);
    int  getTotalLayers() const{return layers.size();}
    int  getLayer() const{return currentLayer;}
+   QString getLayerProperties(int layer);
    void setLayer(int layer);
+   void setLayerProperties(int layer, const QString& properties);
    void newLayer();
    void removeLayer(int layer);
    void setLayerImage(const QString& imagePath);

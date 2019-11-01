@@ -38,10 +38,11 @@ private slots:
    void setCanvasSize();
    void setBackground();
    void removeBackground();
-   void setLayerImage();
-   void removeLayerImage();
    void addLayer();
    void deleteLayer();
+   void setLayerProperties();
+   void setLayerImage();
+   void removeLayerImage();
    void addButton();
    void addJoystick();
    void deleteObjects();

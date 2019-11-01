@@ -31,21 +31,25 @@ MainWindow::MainWindow(QWidget* parent) :
 
    QAction* newAction = new QAction("New", this);
    newAction->setStatusTip("Create a new overlay");
+   newAction->setShortcuts(QKeySequence::New);
    connect(newAction, &QAction::triggered, this, &MainWindow::new_DERESERVED);
    ui->menuFile->addAction(newAction);
 
    QAction* openAction = new QAction("Open", this);
    openAction->setStatusTip("Open overlay file");
+   openAction->setShortcuts(QKeySequence::Open);
    connect(openAction, &QAction::triggered, this, &MainWindow::open);
    ui->menuFile->addAction(openAction);
 
    QAction* saveAction = new QAction("Save", this);
    saveAction->setStatusTip("Save changes");
+   saveAction->setShortcuts(QKeySequence::Save);
    connect(saveAction, &QAction::triggered, this, &MainWindow::save);
    ui->menuFile->addAction(saveAction);
 
    QAction* saveAsAction = new QAction("Save As", this);
    saveAsAction->setStatusTip("Save as a new file");
+   saveAsAction->setShortcuts(QKeySequence::SaveAs);
    connect(saveAsAction, &QAction::triggered, this, &MainWindow::saveAs);
    ui->menuFile->addAction(saveAsAction);
 
@@ -64,16 +68,6 @@ MainWindow::MainWindow(QWidget* parent) :
    connect(removeBackgroundAction, &QAction::triggered, this, &MainWindow::removeBackground);
    ui->menuActions->addAction(removeBackgroundAction);
 
-   QAction* setLayerImageAction = new QAction("Set Layer Image", this);
-   setLayerImageAction->setStatusTip("Set layer image for overlay");
-   connect(setLayerImageAction, &QAction::triggered, this, &MainWindow::setLayerImage);
-   ui->menuActions->addAction(setLayerImageAction);
-
-   QAction* removeLayerImageAction = new QAction("Remove Layer Image", this);
-   removeLayerImageAction->setStatusTip("Remove layer image from overlay");
-   connect(removeLayerImageAction, &QAction::triggered, this, &MainWindow::removeLayerImage);
-   ui->menuActions->addAction(removeLayerImageAction);
-
    QAction* addLayerAction = new QAction("Add Layer", this);
    addLayerAction->setStatusTip("Add another layer to the overlay");
    connect(addLayerAction, &QAction::triggered, this, &MainWindow::addLayer);
@@ -83,6 +77,21 @@ MainWindow::MainWindow(QWidget* parent) :
    deleteLayerAction->setStatusTip("Delete the current layer from the overlay");
    connect(deleteLayerAction, &QAction::triggered, this, &MainWindow::deleteLayer);
    ui->menuActions->addAction(deleteLayerAction);
+
+   QAction* setLayerPropertiesAction = new QAction("Set Layer Properties", this);
+   setLayerPropertiesAction->setStatusTip("Set misc properties for the current layer");
+   connect(setLayerPropertiesAction, &QAction::triggered, this, &MainWindow::setLayerProperties);
+   ui->menuActions->addAction(setLayerPropertiesAction);
+
+   QAction* setLayerImageAction = new QAction("Set Layer Image", this);
+   setLayerImageAction->setStatusTip("Set layer image for overlay");
+   connect(setLayerImageAction, &QAction::triggered, this, &MainWindow::setLayerImage);
+   ui->menuActions->addAction(setLayerImageAction);
+
+   QAction* removeLayerImageAction = new QAction("Remove Layer Image", this);
+   removeLayerImageAction->setStatusTip("Remove layer image from overlay");
+   connect(removeLayerImageAction, &QAction::triggered, this, &MainWindow::removeLayerImage);
+   ui->menuActions->addAction(removeLayerImageAction);
 
    QAction* addButtonAction = new QAction("Add Button", this);
    addButtonAction->setStatusTip("Add a button");
@@ -281,6 +290,24 @@ void MainWindow::removeBackground(){
    editor->setBackground("");
 }
 
+void MainWindow::addLayer(){
+   editor->newLayer();
+   redraw();
+}
+
+void MainWindow::deleteLayer(){
+   editor->removeLayer(editor->getLayer());
+   redraw();
+}
+
+void MainWindow::setLayerProperties(){
+   bool ok;
+   QString properties = QInputDialog::getText(this, "Set Layer Properties", "Layer Properties:", QLineEdit::Normal, editor->getLayerProperties(editor->getLayer()), &ok);
+
+   if(ok)
+      editor->setLayerProperties(editor->getLayer(), properties);
+}
+
 void MainWindow::setLayerImage(){
    QString image = QFileDialog::getOpenFileName(this, "Choose Layer Image", QFileInfo(editor->getCurrentlyOpenOverlay()).path(), "Image (*.png *.jpg *.jpeg *.bmp)");
 
@@ -290,16 +317,6 @@ void MainWindow::setLayerImage(){
 
 void MainWindow::removeLayerImage(){
    editor->setLayerImage("");
-}
-
-void MainWindow::addLayer(){
-   editor->newLayer();
-   redraw();
-}
-
-void MainWindow::deleteLayer(){
-   editor->removeLayer(editor->getLayer());
-   redraw();
 }
 
 void MainWindow::addButton(){

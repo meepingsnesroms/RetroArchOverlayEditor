@@ -71,10 +71,9 @@ bool OverlayEditor::validateStringChars(const QString& extraChars, const QString
    for(int index = 0; index < str.size(); index++){
       if(!str[index].isLetter() && !str[index].isDigit()){
          //check other chars
-         for(int index2 = 0; index2 < extraChars.size(); index2++){
+         for(int index2 = 0; index2 < extraChars.size(); index2++)
             if(str[index] == extraChars[index2])
                goto safe;
-         }
 
          //char invalid
          return false;
@@ -574,6 +573,17 @@ void OverlayEditor::setBackground(const QString& imagePath){
    render();
 }
 
+QString OverlayEditor::getLayerProperties(int layer){
+   QMap<QString, QString> propertyList;
+
+   if(layers[layer].hasAlphaMod)
+      propertyList["alpha_mod"] = QString::number(layers[layer].alphaMod);
+   if(layers[layer].hasRangeMod)
+      propertyList["range_mod"] = QString::number(layers[layer].rangeMod);
+
+   return makePropertyList(propertyList);
+}
+
 void OverlayEditor::setLayer(int layer){
    if(layer >= 0 && layer < layers.size()){
       currentLayer = layer;
@@ -581,6 +591,15 @@ void OverlayEditor::setLayer(int layer){
 
       render();
    }
+}
+
+void OverlayEditor::setLayerProperties(int layer, const QString& properties){
+   QMap<QString, QString> propertyList = splitPropertyList(properties);
+
+   layers[layer].hasAlphaMod = propertyList.contains("alpha_mod");
+   layers[layer].alphaMod = propertyList["alpha_mod"].toDouble();
+   layers[layer].hasRangeMod = propertyList.contains("range_mod");
+   layers[layer].rangeMod = propertyList["range_mod"].toDouble();
 }
 
 void OverlayEditor::newLayer(){
@@ -727,15 +746,15 @@ const QString& OverlayEditor::setObjectName(const QString& name){
 
 const QString& OverlayEditor::setObjectProperties(const QString& properties){
    if(selectedObjects.size() == 1){
-      QMap<QString, QString> propertyPairs = splitPropertyList(properties);
+      QMap<QString, QString> propertyList = splitPropertyList(properties);
 
-      selectedObjects[0]->movable = propertyPairs.contains("movable") && toBool(propertyPairs["movable"]);
-      selectedObjects[0]->hasAlphaMod = propertyPairs.contains("alpha_mod");
-      selectedObjects[0]->alphaMod = propertyPairs["alpha_mod"].toDouble();
-      selectedObjects[0]->hasRangeMod = propertyPairs.contains("range_mod");
-      selectedObjects[0]->rangeMod = propertyPairs["range_mod"].toDouble();
-      selectedObjects[0]->hasSaturatePct = propertyPairs.contains("saturate_pct");
-      selectedObjects[0]->saturatePct = propertyPairs["saturate_pct"].toDouble();
+      selectedObjects[0]->movable = propertyList.contains("movable") && toBool(propertyList["movable"]);
+      selectedObjects[0]->hasAlphaMod = propertyList.contains("alpha_mod");
+      selectedObjects[0]->alphaMod = propertyList["alpha_mod"].toDouble();
+      selectedObjects[0]->hasRangeMod = propertyList.contains("range_mod");
+      selectedObjects[0]->rangeMod = propertyList["range_mod"].toDouble();
+      selectedObjects[0]->hasSaturatePct = propertyList.contains("saturate_pct");
+      selectedObjects[0]->saturatePct = propertyList["saturate_pct"].toDouble();
 
       //update null color if type changed
       if(!selectedObjects[0]->hasPicture)
