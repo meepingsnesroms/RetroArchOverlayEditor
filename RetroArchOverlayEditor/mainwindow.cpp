@@ -7,6 +7,7 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QFileInfo>
+#include <QIcon>
 
 
 #define DEFAULT_WIDTH 640
@@ -29,25 +30,29 @@ MainWindow::MainWindow(QWidget* parent) :
    ui->centralWidget->installEventFilter(this);
    ui->centralWidget->setObjectName("centralWidget");
 
-   QAction* newAction = new QAction("New", this);
+   const QIcon newIcon = QIcon(":/assets/document-new.svg");
+   QAction* newAction = new QAction(newIcon, "New", this);
    newAction->setStatusTip("Create a new overlay");
    newAction->setShortcuts(QKeySequence::New);
    connect(newAction, &QAction::triggered, this, &MainWindow::new_DERESERVED);
    ui->menuFile->addAction(newAction);
 
-   QAction* openAction = new QAction("Open", this);
+   const QIcon openIcon = QIcon(":/assets/document-open.svg");
+   QAction* openAction = new QAction(openIcon, "Open", this);
    openAction->setStatusTip("Open overlay file");
    openAction->setShortcuts(QKeySequence::Open);
    connect(openAction, &QAction::triggered, this, &MainWindow::open);
    ui->menuFile->addAction(openAction);
 
-   QAction* saveAction = new QAction("Save", this);
+   const QIcon saveIcon = QIcon(":/assets/document-save.svg");
+   QAction* saveAction = new QAction(saveIcon, "Save", this);
    saveAction->setStatusTip("Save changes");
    saveAction->setShortcuts(QKeySequence::Save);
    connect(saveAction, &QAction::triggered, this, &MainWindow::save);
    ui->menuFile->addAction(saveAction);
 
-   QAction* saveAsAction = new QAction("Save As", this);
+   const QIcon saveAsIcon = QIcon(":/assets/document-save-as.svg");
+   QAction* saveAsAction = new QAction(saveAsIcon, "Save As", this);
    saveAsAction->setStatusTip("Save as a new file");
    saveAsAction->setShortcuts(QKeySequence::SaveAs);
    connect(saveAsAction, &QAction::triggered, this, &MainWindow::saveAs);
@@ -93,48 +98,51 @@ MainWindow::MainWindow(QWidget* parent) :
    connect(removeLayerImageAction, &QAction::triggered, this, &MainWindow::removeLayerImage);
    ui->menuActions->addAction(removeLayerImageAction);
 
-   QAction* addButtonAction = new QAction("Add Button", this);
-   addButtonAction->setStatusTip("Add a button");
-   connect(addButtonAction, &QAction::triggered, this, &MainWindow::addButton);
-   ui->menuActions->addAction(addButtonAction);
-
-   QAction* addJoystickAction = new QAction("Add Joystick", this);
-   addJoystickAction->setStatusTip("Add a joystick");
-   connect(addJoystickAction, &QAction::triggered, this, &MainWindow::addJoystick);
-   ui->menuActions->addAction(addJoystickAction);
+   QAction* addObjectAction = new QAction("Add Object", this);
+   addObjectAction->setStatusTip("Add an object");
+   addObjectAction->setShortcuts(QKeySequence::listFromString("+"));
+   connect(addObjectAction, &QAction::triggered, this, &MainWindow::addObject);
+   ui->menuActions->addAction(addObjectAction);
 
    QAction* deleteObjectsAction = new QAction("Delete Object(s)", this);
    deleteObjectsAction->setStatusTip("Delete the selected objects");
+   deleteObjectsAction->setShortcuts(QKeySequence::listFromString("-"));
    connect(deleteObjectsAction, &QAction::triggered, this, &MainWindow::deleteObjects);
    ui->menuActions->addAction(deleteObjectsAction);
 
    QAction* setObjectNameAction = new QAction("Set Object Name", this);
    setObjectNameAction->setStatusTip("Set the internal name of object");
+   setObjectNameAction->setShortcuts(QKeySequence::listFromString("N"));
    connect(setObjectNameAction, &QAction::triggered, this, &MainWindow::setObjectName);
    ui->menuActions->addAction(setObjectNameAction);
 
    QAction* setObjectPropertiesAction = new QAction("Set Object Properties", this);
    setObjectPropertiesAction->setStatusTip("Set misc properties of an object");
+   setObjectPropertiesAction->setShortcuts(QKeySequence::listFromString("P"));
    connect(setObjectPropertiesAction, &QAction::triggered, this, &MainWindow::setObjectProperties);
    ui->menuActions->addAction(setObjectPropertiesAction);
 
    QAction* setObjectImageAction = new QAction("Set Object Image", this);
    setObjectImageAction->setStatusTip("Set image displayed for selected object");
+   setObjectImageAction->setShortcuts(QKeySequence::listFromString("I"));
    connect(setObjectImageAction, &QAction::triggered, this, &MainWindow::setObjectImage);
    ui->menuActions->addAction(setObjectImageAction);
 
    QAction* removeObjectImageAction = new QAction("Remove Object Image", this);
    removeObjectImageAction->setStatusTip("Remove the image attached to the selected object");
+   removeObjectImageAction->setShortcuts(QKeySequence::listFromString("J"));
    connect(removeObjectImageAction, &QAction::triggered, this, &MainWindow::removeObjectImage);
    ui->menuActions->addAction(removeObjectImageAction);
 
    QAction* setCircularObjectsAction = new QAction("Set Circular Object(s)", this);
    setCircularObjectsAction->setStatusTip("Make the selected objects hitbox circular");
+   setCircularObjectsAction->setShortcuts(QKeySequence::listFromString("C"));
    connect(setCircularObjectsAction, &QAction::triggered, this, &MainWindow::setCircularObjects);
    ui->menuActions->addAction(setCircularObjectsAction);
 
    QAction* setSquareObjectsAction = new QAction("Set Square Object(s)", this);
    setSquareObjectsAction->setStatusTip("Make the selected objects hitbox square");
+   setSquareObjectsAction->setShortcuts(QKeySequence::listFromString("S"));
    connect(setSquareObjectsAction, &QAction::triggered, this, &MainWindow::setSquareObjects);
    ui->menuActions->addAction(setSquareObjectsAction);
 
@@ -319,12 +327,8 @@ void MainWindow::removeLayerImage(){
    editor->setLayerImage("");
 }
 
-void MainWindow::addButton(){
+void MainWindow::addObject(){
    editor->addObject(false);
-}
-
-void MainWindow::addJoystick(){
-   editor->addObject(true);
 }
 
 void MainWindow::deleteObjects(){

@@ -43,8 +43,7 @@ private slots:
    void setLayerProperties();
    void setLayerImage();
    void removeLayerImage();
-   void addButton();
-   void addJoystick();
+   void addObject();
    void deleteObjects();
    void setObjectName();
    void setObjectProperties();

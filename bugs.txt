@@ -1,9 +1,9 @@
 Has no undo/redo feature
-Has no hotkeys setup
 overlay*_full_screen = false is unsupported(this dosent seem to do anything in RetroArch anyway?)
 Unknown variables are deleted on save(currently all variables are known though)
 
 Fixed:
+Has no hotkeys setup
 Need "Set Layer Properties" and "Set Object Properties" menus
 Cant change alpha channel and range mods for layers(per object is supported)
 "overlay%u_desc%u_saturate_pct" not supported
